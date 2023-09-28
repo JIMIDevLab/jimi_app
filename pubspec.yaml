@@ -1,0 +1,30 @@
+name: jimi_app
+description: A new Flutter project.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.2 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  url_launcher: ^6.0.6
+  flutter_lints: ^2.0.0
+  http: ^1.1.0
+  intl: ^0.18.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo.png
