@@ -76166,7 +76166,7 @@ A.mu.prototype={
 ap(){return new A.KT(B.k)}}
 A.KT.prototype={
 P(a){var s=t.F
-return A.ao7(A.mJ(A.b([B.r8,A.Fk(new A.Je(B.hN,A.mJ(A.b([B.Ps,B.wR,this.abX(0),B.wR,B.Pw],s),B.eq,B.aS,B.b3),null))],s),B.bU,B.aS,B.b3))},
+return A.ao7(A.mJ(A.b([B.r8,A.Fk(new A.Je(B.hN,A.mJ(A.b([B.Pr,B.wR,this.abX(0),B.wR,B.Pw],s),B.eq,B.aS,B.b3),null))],s),B.bU,B.aS,B.b3))},
 abX(a){return A.DU(new A.Gh(new A.a9f(this),null),null,null)},
 lz(a){return this.a3X(a)},
 a3X(a){var s=0,r=A.U(t.z),q,p
@@ -76189,7 +76189,7 @@ return A.T($async$lz,r)}}
 A.a9f.prototype={
 $2(a,b){var s=this.a,r=t.F
 if(b.b<400)return A.mJ(A.b([A.Y5(B.Pt,new A.a9b(s)),B.K4,A.Y5(B.xe,new A.a9c(s))],r),B.bU,B.aS,B.f2)
-else return A.xq(A.b([A.Y5(B.Pr,new A.a9d()),B.wQ,A.Y5(B.xe,new A.a9e(s))],r),B.G2,B.b3)},
+else return A.xq(A.b([A.Y5(B.Ps,new A.a9d()),B.wQ,A.Y5(B.xe,new A.a9e(s))],r),B.G2,B.b3)},
 $S:447}
 A.a9b.prototype={
 $0(){this.a.lz("ios")},
@@ -82015,8 +82015,8 @@ B.Oz=new A.m(!0,B.j,null,"Roboto",null,null,null,null,null,null,null,null,null,n
 B.Or=new A.m(!0,B.j,null,"Roboto",null,null,null,null,null,null,null,null,null,null,null,null,null,B.e,null,null,null,"whiteMountainView labelMedium",null,null,null,null)
 B.O1=new A.m(!0,B.j,null,"Roboto",null,null,null,null,null,null,null,null,null,null,null,null,null,B.e,null,null,null,"whiteMountainView labelSmall",null,null,null,null)
 B.Pq=new A.cA(B.NH,B.P3,B.OL,B.Ma,B.OC,B.NB,B.P7,B.MG,B.Ng,B.Ov,B.M1,B.OM,B.Oz,B.Or,B.O1)
-B.Pr=new A.fx("Unavailable on the App Store yet",null,null,null,null,null,null,null,null)
-B.Ps=new A.fx("Welcome to the Jimi App!",null,B.xd,null,null,null,null,null,null)
+B.Pr=new A.fx("Welcome to the Jimi App!",null,B.xd,null,null,null,null,null,null)
+B.Ps=new A.fx("Not yet available on the App Store",null,null,null,null,null,null,null,null)
 B.Pt=new A.fx("Download on the App Store",null,null,null,null,null,null,null,null)
 B.Pu=new A.fx("I'm Jimi the Chatbot",null,null,null,null,null,null,null,null)
 B.Nd=new A.m(!0,null,null,null,null,null,16,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
