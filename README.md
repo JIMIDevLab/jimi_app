@@ -77,10 +77,10 @@ To connect the Jimi App with the Jimi API:
 This section provides information on creating release builds for the Jimi App.
 
 ### Web
-For web deployment, use the following commands (Windows):
+For web deployment, use the following commands (Linux):
 
    ```bash
-   flutter build web --release --target=lib\main.dart
+   flutter build web --release --target=lib/main.dart
    mv ./build/web ./webapp
    ```
 
