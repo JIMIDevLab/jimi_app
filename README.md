@@ -71,18 +71,20 @@ To connect the Jimi App with the Jimi API:
 3. Add post to [api_service_post.dart](lib/api/api_services_post.dart).
 4. Call the get or post in the code to interact with the API.
 
-> The swapgger documentation of the API is at [jimi.h.minet.net/swagger-ui.html](http://jimi.h.minet.net/swagger-ui.html)
+> The swapgger documentation of the API is at [jimi-api.h.minet.net/swagger-ui.html](http://jimi-api.h.minet.net/swagger-ui.html)
 
 ## Release Builds
 This section provides information on creating release builds for the Jimi App.
 
 ### Web
-For web deployment, use the following commands (Windows):
+For web deployment, use the following commands (Linux):
 
    ```bash
-   flutter build web --release --target=lib\main.dart
+   flutter build web --release --target=lib/main.dart
    mv ./build/web ./webapp
    ```
+
+The webapp is available at http://jimi.h.minet.net/#/home
 
 ### Mobile
 For mobile deployment, use Android Studio to generate signed bundle like [app-release.aab](android/app/release/app-release.aab)

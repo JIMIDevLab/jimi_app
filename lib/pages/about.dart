@@ -88,7 +88,7 @@ class _AboutState extends State<About> {
                     onPressed: () {
                       // _launchAppStore('ios');
                     },
-                    child: const Text('Unavailable on the App Store yet'),
+                    child: const Text('Not yet available on the App Store'),
                   ),
                   const SizedBox(width: 20),
                   ElevatedButton(
