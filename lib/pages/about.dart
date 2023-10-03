@@ -67,9 +67,9 @@ class _AboutState extends State<About> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      _launchAppStore('ios');
+                      // _launchAppStore('ios');
                     },
-                    child: const Text('Download on the App Store'),
+                    child: const Text('Not yet available on the App Store'),
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton(
@@ -114,7 +114,7 @@ class _AboutState extends State<About> {
     } else if (platform == 'android') {
       url = 'https://play.google.com/store/apps/details?id=fr.tsp.jimithechatbot';
     } else if (platform == 'web') {
-      url = 'http://jimi.h.minet.net/swagger-ui/index.html#/';
+      url = 'http://jimi.h.minet.net/#/home/';
     }
     Uri uri = Uri.parse(url);
 
