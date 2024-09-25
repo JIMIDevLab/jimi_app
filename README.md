@@ -1,6 +1,6 @@
 # Jimi App
 
-JIMI is a school project aimed at developing an application for managment of time and calendar, which includes the functionality to open chat with a chatbot that will handle the database of the calendar.
+JIMI is a school project aimed at developing an application for management of time and calendar, which includes the functionality to open chat with a chatbot that will handle the database of the calendar.
 
 This Jimi App is a Dart-based application using Flutter, to make an application on web, Android and iOS. This README provides essential information on how to set up and use the project.
 
@@ -71,7 +71,7 @@ To connect the Jimi App with the Jimi API:
 3. Add post to [api_service_post.dart](lib/api/api_services_post.dart).
 4. Call the get or post in the code to interact with the API.
 
-> The swapgger documentation of the API is at [http://jimi-api.julsql.fr/swagger-ui/index.html](http://jimi-api.julsql.fr/swagger-ui/index.html)
+> The swapgger documentation of the API is at [jimi-api.h.minet.net/swagger-ui.html](http://jimi-api.h.minet.net/swagger-ui.html)
 
 ## Release Builds
 This section provides information on creating release builds for the Jimi App.
@@ -84,7 +84,7 @@ For web deployment, use the following commands (Linux):
    mv ./build/web ./webapp
    ```
 
-The webapp is available at http://jimi.h.minet.net/#/home
+The webapp is available at http://jimi.julsql.fr/#/home
 
 ### Mobile
 For mobile deployment, use Android Studio to generate signed bundle like [app-release.aab](android/app/release/app-release.aab)
