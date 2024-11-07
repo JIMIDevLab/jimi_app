@@ -41,7 +41,7 @@ class _AboutState extends State<About> {
             download(),
             const SizedBox(height: 20.0),
             const Text(
-              'I\'m here to help to to manage yout agenda!',
+              'I\'m here to help you to manage your agenda!',
               style: TextStyle(fontSize: 16.0),
             ),
           ]
@@ -56,6 +56,9 @@ class _AboutState extends State<About> {
               _launchAppStore('web');
             },
             child: const Text('Go to the web site'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+            ),
           ));
     } else {
       return Center(
@@ -67,16 +70,22 @@ class _AboutState extends State<About> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      _launchAppStore('ios');
+                      // _launchAppStore('ios');
                     },
-                    child: const Text('Download on the App Store'),
+                    child: const Text('Not yet available on Apple Store'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () {
-                      _launchAppStore('android');
+                      // _launchAppStore('android');
                     },
-                    child: const Text('Get it on Google Play'),
+                    child: const Text('Not yet available on Google Play'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                 ],
               );
@@ -88,14 +97,20 @@ class _AboutState extends State<About> {
                     onPressed: () {
                       // _launchAppStore('ios');
                     },
-                    child: const Text('Not yet available on the App Store'),
+                    child: const Text('Not yet available on Apple Store'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 20),
                   ElevatedButton(
                     onPressed: () {
-                      _launchAppStore('android');
+                      // _launchAppStore('android');
                     },
-                    child: const Text('Get it on Google Play'),
+                    child: const Text('Not yet available on Google Play'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                    ),
                   ),
                 ],
               );
@@ -114,7 +129,7 @@ class _AboutState extends State<About> {
     } else if (platform == 'android') {
       url = 'https://play.google.com/store/apps/details?id=fr.tsp.jimithechatbot';
     } else if (platform == 'web') {
-      url = 'http://jimi.h.minet.net/swagger-ui/index.html#/';
+      url = 'http://jimi.julsql.fr/#/home/';
     }
     Uri uri = Uri.parse(url);
 

@@ -1,6 +1,8 @@
 .idea/
+webapp/
 *key*
-*.DS_Store
+**/.DS_Store
+*.iml
 # See https://www.dartlang.org/guides/libraries/private-files
 
 # Files and directories created by pub
