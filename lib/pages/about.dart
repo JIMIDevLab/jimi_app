@@ -41,7 +41,7 @@ class _AboutState extends State<About> {
             download(),
             const SizedBox(height: 20.0),
             const Text(
-              'I\'m here to help to to manage your agenda!',
+              'I\'m here to help you to manage your agenda!',
               style: TextStyle(fontSize: 16.0),
             ),
           ]

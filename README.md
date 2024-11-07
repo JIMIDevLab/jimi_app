@@ -71,7 +71,7 @@ To connect the Jimi App with the Jimi API:
 3. Add post to [api_service_post.dart](lib/api/api_services_post.dart).
 4. Call the get or post in the code to interact with the API.
 
-> The swapgger documentation of the API is at [jimi-api.h.minet.net/swagger-ui.html](http://jimi-api.h.minet.net/swagger-ui.html)
+> The swagger documentation of the API is at [http://jimi-api.julsql.fr/swagger-ui/index.html](http://jimi-api.julsql.fr/swagger-ui/index.html)
 
 ## Release Builds
 This section provides information on creating release builds for the Jimi App.
