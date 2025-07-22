@@ -87,7 +87,18 @@ For web deployment, use the following commands (Linux):
 The webapp is available at http://jimi.julsql.fr/#/home
 
 ### Mobile
-For mobile deployment, use Android Studio to generate signed bundle like [app-release.aab](android/app/release/app-release.aab)
+For mobile deployment, use Android Studio to generate signed bundle like [app-release.aab](android/app/release/app-release-1.aab)
+
+With terminal, in `jimi_app/android` (don't forget to put the keystore in [android/app/keystore](android/app/keystore) and the credentials in [android/key.properties](android/key.properties)):
+
+Update the version in [pubspec.yaml](pubspec.yaml)
+
+```bash
+flutter clean                      
+flutter pub get
+flutter build appbundle
+```
+
 The deployed application is on Google Play Store at https://play.google.com/store/apps/details?id=fr.tsp.jimithechatbot
 
 ## App Information
