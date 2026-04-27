@@ -1,0 +1,25 @@
+name: jimi-app
+
+# Web frontend stack. Only the static Expo Web bundle, served by an
+# internal nginx and reverse-proxied by the host's nginx:
+#
+#   jimi.julsql.fr  →  127.0.0.1:${APP_PORT}  →  app:80
+#
+# The API is deployed independently from `../jimi_api` (so the Android
+# client and the web client both hit it the same way over the public
+# domain). See `infra/nginx/jimi.julsql.fr.conf` for the host vhost.
+#
+# Bring it up:
+#   cp .env.example .env       # set EXPO_PUBLIC_API_URL
+#   docker compose up -d --build
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-https://jimi-api.julsql.fr}
+    container_name: jimi-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8101}:80"

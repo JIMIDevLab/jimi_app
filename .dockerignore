@@ -1,0 +1,22 @@
+node_modules
+.expo
+dist
+web-build
+.git
+.gitignore
+.DS_Store
+*.log
+npm-debug.log*
+.env*
+!.env.example
+README.md
+CLAUDE.md
+.idea
+.vscode
+.claude
+ios
+android
+
+# Deployment-only — not needed for the JS bundle build
+infra
+docker-compose.yml

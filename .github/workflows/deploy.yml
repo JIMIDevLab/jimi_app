@@ -1,0 +1,43 @@
+name: deploy
+
+# Push-to-deploy. SSHes into the server and rebuilds the web app
+# container with the multi-stage Dockerfile (npm ci + npm run build:web,
+# then nginx). Needs swap configured on the server (npm peaks at ~1 GB
+# RAM during install).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#
+#   SSH_HOST     hostname of the server
+#   SSH_USER     ssh user (e.g. deploy)
+#   SSH_KEY      private SSH key authorized on the server
+#   DEPLOY_PATH  absolute path on the host (e.g. /opt/jimi_app)
+#
+# The server must have a git checkout of this repo at DEPLOY_PATH and a
+# `.env` with EXPO_PUBLIC_API_URL + APP_PORT (never overwritten by the
+# deploy).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-app
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+            docker image prune -f
