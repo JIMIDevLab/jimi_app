@@ -78,26 +78,19 @@ export function AppBar() {
 
   const onAbout = pathname === '/about';
   const onSchedule = pathname === '/schedule';
+  // Toggle off → always go straight to the chat, regardless of history.
+  // (Pressing About from Schedule then re-tapping About should land on
+  // /home, not back on /schedule.)
   const handleInfoPress = () => {
     if (onAbout) {
-      // Toggle off: go back to wherever we came from (the chat). Fall back
-      // to /home when there's no history (e.g. direct refresh on /about).
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/home');
-      }
+      router.replace('/home');
     } else {
       router.push('/about');
     }
   };
   const handleSchedulePress = () => {
     if (onSchedule) {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/home');
-      }
+      router.replace('/home');
     } else {
       router.push('/schedule');
     }
