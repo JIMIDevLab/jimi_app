@@ -2,7 +2,7 @@
   "expo": {
     "name": "JIMI The Chatbot",
     "slug": "jimi-app",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "scheme": "jimi",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "fr.tsp.jimithechatbot",
-      "versionCode": 11,
+      "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#e3e2e2"
