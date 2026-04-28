@@ -369,6 +369,54 @@ This propagates `app.json` (icon, version, package) into the
 bundle. Re-run it whenever `app.json` or `assets/images/logo.png`
 changes.
 
+> ⚠️ **`prebuild` regenerates `android/app/build.gradle` from
+> scratch and wipes the release `signingConfigs` block.** After
+> running it, you must re-inject the upload-key signing config
+> before building. In `android/app/build.gradle`, find:
+>
+> ```gradle
+> signingConfigs {
+>     debug { ... }
+> }
+> buildTypes {
+>     ...
+>     release {
+>         // Caution! In production, you need to generate your own keystore file.
+>         signingConfig signingConfigs.debug
+>         ...
+>     }
+> }
+> ```
+>
+> and replace it with:
+>
+> ```gradle
+> signingConfigs {
+>     debug { ... }
+>     release {
+>         if (project.hasProperty('JIMI_UPLOAD_STORE_FILE')) {
+>             storeFile file(JIMI_UPLOAD_STORE_FILE)
+>             storePassword JIMI_UPLOAD_STORE_PASSWORD
+>             keyAlias JIMI_UPLOAD_KEY_ALIAS
+>             keyPassword JIMI_UPLOAD_KEY_PASSWORD
+>         }
+>     }
+> }
+> buildTypes {
+>     ...
+>     release {
+>         signingConfig signingConfigs.release    // ← swap .debug → .release
+>         ...
+>     }
+> }
+> ```
+>
+> Skipping this step produces an AAB signed with the **debug
+> keystore** — Play Console will reject it (or worse, accept it
+> and break update compatibility for existing users). Always
+> verify with `jarsigner -verify -verbose -certs <aab>` before
+> uploading.
+
 **3. Build the signed AAB**
 
 ```bash
@@ -379,6 +427,42 @@ cd android
 Output: `android/app/build/outputs/bundle/release/app-release.aab`
 (typically 30–50 MB, ~3–5 min on a recent Mac). Gradle automatically
 signs it using the credentials from `~/.gradle/gradle.properties`.
+
+> ⚠️ **`EXPO_PUBLIC_API_URL` must be visible to Metro at bundle
+> time, not just at prebuild time.** It's inlined into the JS
+> bundle by the `:app:createBundleReleaseJsAndAssets` task that
+> runs *inside* `bundleRelease`. The repo's `.env` file
+> (gitignored, copied from `.env.example`) makes Metro pick it up
+> automatically. On a fresh clone or CI, either:
+>
+> - copy `.env.example` to `.env` before building, **or**
+> - prefix the build command: `EXPO_PUBLIC_API_URL=https://jimi-api.julsql.fr ./gradlew bundleRelease`
+>
+> Skipping this bakes the dev fallback `http://localhost:8080`
+> into the bundle — the app installs fine but every device shows
+> "Offline" because the baked URL points nowhere. Verify after
+> building:
+>
+> ```bash
+> unzip -p android/app/build/outputs/bundle/release/app-release.aab \
+>   base/assets/index.android.bundle | strings | \
+>   grep -ao 'jimi-api\.julsql\.fr'
+> ```
+>
+> Must return at least one match. (Use `\.` to escape the dots and
+> `-ao` to extract the literal substring — the Hermes string table
+> concatenates everything onto one line, so a plain `grep` will
+> either match silently or appear to find nothing.) For
+> completeness, also confirm the fallback got tree-shaken:
+>
+> ```bash
+> unzip -p android/app/build/outputs/bundle/release/app-release.aab \
+>   base/assets/index.android.bundle | strings | \
+>   grep -c "localhost:8080"
+> ```
+>
+> Must return `0`. A non-zero count means R8 didn't dead-code
+> eliminate the fallback branch — the env var was missing.
 
 **4. Smoke-test the build (optional but recommended)**
 
