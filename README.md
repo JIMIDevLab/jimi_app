@@ -24,6 +24,7 @@ The Android build is published on the Play Store:
 - [Notable features](#notable-features)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
+- [Android release build](#android-release-build)
 - [License](#license)
 - [Authors](#authors)
 
@@ -296,6 +297,134 @@ cd /opt/jimi_app
 git pull
 docker compose up -d --build
 ```
+
+## Android release build
+
+End-to-end procedure for shipping a new version of the Android app
+to the Play Store (`fr.tsp.jimithechatbot`). The Play Store
+listing is bound to the existing upload signing key — **always
+reuse the same keystore**; rotating it would force republishing as
+a brand-new app and lose the install base.
+
+### Prerequisites
+
+Once per machine:
+
+- **Android SDK** installed (Android Studio is the easiest way).
+  Either export `ANDROID_HOME=$HOME/Library/Android/sdk` in your
+  shell, or create `android/local.properties` with
+  `sdk.dir=/Users/<you>/Library/Android/sdk`.
+- **JDK 17** (bundled with recent Android Studio).
+- **Keystore file** copied to `android/app/jimi-release.keystore`
+  (gitignored via `android/app/*.keystore` — never commit it).
+- **Signing credentials** in `~/.gradle/gradle.properties`
+  (Gradle's user-level file, read automatically on every build,
+  outside any repo):
+
+  ```properties
+  # ~/.gradle/gradle.properties
+  JIMI_UPLOAD_STORE_FILE=jimi-release.keystore
+  JIMI_UPLOAD_KEY_ALIAS=<alias>
+  JIMI_UPLOAD_STORE_PASSWORD=<keystore password>
+  JIMI_UPLOAD_KEY_PASSWORD=<key password>
+  ```
+
+  `android/app/build.gradle` reads them via `signingConfigs.release`.
+  If any of the four is missing, `bundleRelease` errors out with
+  *"Keystore file not set for signing config release"*.
+
+> ⚠️ Losing the keystore means losing the ability to publish
+> updates ever again. Back it up outside this machine (password
+> manager, encrypted vault, etc.).
+
+### Release procedure
+
+**1. Bump the version in [`app.json`](./app.json)**
+
+```jsonc
+{
+  "expo": {
+    "version": "2.0.4",                 // human-readable, semver
+    "android": {
+      "package": "fr.tsp.jimithechatbot",
+      "versionCode": 5                  // strictly > last live value
+    }
+  }
+}
+```
+
+`versionCode` must be a strictly increasing integer — Play Console
+rejects equal or lower values. Check the current live code in Play
+Console → *Production* → latest release.
+
+**2. Sync the native project**
+
+```bash
+EXPO_PUBLIC_API_URL=https://jimi-api.julsql.fr \
+  npx expo prebuild --platform android
+```
+
+This propagates `app.json` (icon, version, package) into the
+`android/` Gradle project and bakes the prod API URL into the JS
+bundle. Re-run it whenever `app.json` or `assets/images/logo.png`
+changes.
+
+**3. Build the signed AAB**
+
+```bash
+cd android
+./gradlew bundleRelease
+```
+
+Output: `android/app/build/outputs/bundle/release/app-release.aab`
+(typically 30–50 MB, ~3–5 min on a recent Mac). Gradle automatically
+signs it using the credentials from `~/.gradle/gradle.properties`.
+
+**4. Smoke-test the build (optional but recommended)**
+
+The AAB itself can't be installed directly — it's a Play Store
+distribution format. Two ways to verify:
+
+- **APK fallback** for local testing — `./gradlew assembleRelease`
+  produces a signed APK at
+  `android/app/build/outputs/apk/release/app-release.apk`.
+  Install it on a device/emulator with
+  `adb install -r app-release.apk`.
+- **Internal testing track** on Play Console — upload the AAB,
+  add yourself as a tester, install via the opt-in URL. This is
+  the closest to what real users will receive.
+
+**5. Upload to Play Console**
+
+[Play Console](https://play.google.com/console) → JIMI →
+*Production* (or *Internal testing* / *Closed testing* for staged
+rollouts) → *Create new release* → upload the `.aab` → fill in
+the release notes → *Review release* → *Start rollout*.
+
+For risk-averse releases, start the rollout at 10–20% and ramp up
+over a few days while watching the *Crashes & ANRs* dashboard.
+
+**6. Tag the release in git**
+
+```bash
+git add app.json
+git commit -m "release: android 2.0.4 (versionCode 5)"
+git tag -a android-v2.0.4 -m "Android 2.0.4"
+git push && git push --tags
+```
+
+Tagging makes it easy to rebuild the exact AAB later if the Play
+Store ever asks you to re-upload.
+
+### Troubleshooting
+
+| Symptom                                                            | Cause                                                          | Fix                                                                                       |
+|--------------------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `SDK location not found`                                           | `ANDROID_HOME` not set and no `android/local.properties`       | Export `ANDROID_HOME` or create `local.properties` (see *Prerequisites*).                 |
+| `Keystore file not set for signing config release`                 | `~/.gradle/gradle.properties` missing or incomplete            | Re-create it with all four `JIMI_UPLOAD_*` properties.                                    |
+| `Version code X has already been used`                             | `versionCode` in `app.json` is not above the last live one     | Bump `android.versionCode` and rerun `prebuild` + `bundleRelease`.                        |
+| Play Console: *"Your APK or Android App Bundle is not signed…"*    | A previous build wasn't signed (e.g. a `JIMI_UPLOAD_*` typo)   | Verify with `jarsigner -verify -verbose app-release.aab` then rebuild.                    |
+| App installs but immediately crashes / blank screen                | API URL not baked at build time                                | Always pass `EXPO_PUBLIC_API_URL=...` on the `prebuild` line, not on `gradlew`.           |
 
 ## License
 
