@@ -69,21 +69,28 @@ export default function AboutScreen() {
   const { width } = useWindowDimensions();
   const stack = width < 480;
 
-  // Mirrors download() in lib/pages/about.dart:
-  //   - on native: invite the user to the website
-  //   - on web: show two "Not yet available" buttons
+  // On web, surface the store CTAs. On native, invite the user to the
+  // web version. Apple Store still pending; Google Play is live.
   const ctas = isWeb ? (
     <View style={[styles.ctaRow, stack && styles.ctaColumn]}>
       <ActionButton label="Apple Store — coming soon" disabled />
       {stack ? <View style={{ height: spacing.sm }} /> : <View style={{ width: spacing.md }} />}
-      <ActionButton label="Google Play — coming soon" disabled />
+      <ActionButton
+        label="Get it on Google Play"
+        primary
+        onPress={() =>
+          openUrl(
+            'https://play.google.com/store/apps/details?id=fr.tsp.jimithechatbot',
+          )
+        }
+      />
     </View>
   ) : (
     <View style={styles.ctaCenter}>
       <ActionButton
         label="Visit the web version"
         primary
-        onPress={() => openUrl('http://jimi.julsql.fr/#/home/')}
+        onPress={() => openUrl('https://jimi.julsql.fr/')}
       />
     </View>
   );
