@@ -14,6 +14,7 @@ import {
   type TextInputKeyPressEventData,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import { AppBar } from '../components/AppBar';
 import { ChatBubble } from '../components/ChatBubble';
 import { TypingIndicator } from '../components/TypingIndicator';
@@ -211,6 +212,14 @@ export default function ChatScreen() {
                   : checking
                     ? 'Checking the connection to Jimi…'
                     : "We'll let you know as soon as Jimi is back."}
+                {Platform.OS === 'web' ? (
+                  <>
+                    {'  ·  '}
+                    <Link href="/privacy" style={styles.footnoteLink}>
+                      Privacy
+                    </Link>
+                  </>
+                ) : null}
               </Text>
             </View>
           </View>
@@ -303,6 +312,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.bodyFamily,
     fontSize: typography.micro,
     color: colors.hint,
+  },
+  footnoteLink: {
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
   },
 });
 

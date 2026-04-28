@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBar } from '../components/AppBar';
 import {
@@ -119,6 +120,16 @@ export default function AboutScreen() {
             </View>
 
             <View style={styles.ctaSection}>{ctas}</View>
+
+            {/* Privacy is a web-only concern — the mobile apps surface
+                privacy info via their respective stores. */}
+            {isWeb ? (
+              <View style={styles.footer}>
+                <Link href="/privacy" style={styles.footerLink}>
+                  Privacy Policy
+                </Link>
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       </View>
@@ -186,6 +197,19 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   ctaSection: { marginTop: spacing.xl, alignItems: 'center' },
+  footer: {
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  footerLink: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
   ctaRow: {
     flexDirection: 'row',
     justifyContent: 'center',
