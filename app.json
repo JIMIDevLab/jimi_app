@@ -19,6 +19,7 @@
     "android": {
       "package": "fr.tsp.jimithechatbot",
       "versionCode": 12,
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#e3e2e2"

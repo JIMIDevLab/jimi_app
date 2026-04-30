@@ -138,9 +138,15 @@ export default function ChatScreen() {
       <View style={styles.container}>
         <AppBar />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={
+            Platform.OS === 'ios'
+              ? 'padding'
+              : Platform.OS === 'android'
+                ? 'height'
+                : undefined
+          }
           style={styles.flex}
-          keyboardVerticalOffset={20}
+          keyboardVerticalOffset={0}
         >
           <View style={styles.contentWrap}>
             <View style={styles.content}>
