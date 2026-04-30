@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "fr.tsp.jimithechatbot"
+      "bundleIdentifier": "fr.tsp.jimithechatbot",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "fr.tsp.jimithechatbot",
@@ -35,6 +38,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3841a5bd-3cd4-47f8-91b0-216a65b0b3a9"
+      }
     }
   }
 }
