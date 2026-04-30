@@ -124,6 +124,22 @@ export default function ChatScreen() {
     }
   };
 
+  // Native: with multiline=true, Android ignores blurOnSubmit and inserts
+  // a "\n" instead of firing onSubmitEditing. Detect the inserted newline
+  // and treat it as Send — matches the iOS behaviour where blurOnSubmit
+  // already routes Return through onSubmitEditing.
+  const handleChangeText = (text: string) => {
+    if (
+      Platform.OS === 'android' &&
+      text.length === draft.length + 1 &&
+      text.endsWith('\n')
+    ) {
+      submit(draft);
+      return;
+    }
+    setDraft(text);
+  };
+
   const hasMessages = messages.length > 0;
   const canSend = draft.trim().length > 0 && !pending && ready;
 
@@ -190,10 +206,11 @@ export default function ChatScreen() {
                   value={draft}
                   placeholder={placeholder}
                   placeholderTextColor={colors.hint}
-                  onChangeText={setDraft}
+                  onChangeText={handleChangeText}
                   onKeyPress={handleKeyPress}
                   onSubmitEditing={(e) => submit(e.nativeEvent.text)}
                   returnKeyType="send"
+                  blurOnSubmit
                   editable={ready && !pending}
                   multiline
                 />
