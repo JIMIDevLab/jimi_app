@@ -5,7 +5,7 @@
     "version": "3.0.2",
     "scheme": "jimi",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/logo-app.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/logo.png",
@@ -21,8 +21,8 @@
       "versionCode": 13,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#e3e2e2"
+        "foregroundImage": "./assets/images/logo-app.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
