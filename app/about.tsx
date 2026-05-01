@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ScrollView,
   View,
@@ -8,6 +9,7 @@ import {
   Image,
   useWindowDimensions,
   Linking,
+  Alert,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { Link } from 'expo-router';
@@ -21,6 +23,8 @@ import {
   spacing,
   typography,
 } from '../theme/styles';
+import { useUserId, resetUserId } from '../hooks/useUserId';
+import { deleteUserData } from '../api/userService';
 
 const isWeb = Platform.OS === 'web';
 
@@ -32,14 +36,18 @@ async function openUrl(url: string) {
   }
 }
 
+type ButtonVariant = 'primary' | 'ghost' | 'danger';
+
 interface ButtonProps {
   label: string;
-  primary?: boolean;
+  variant?: ButtonVariant;
   disabled?: boolean;
   onPress?: () => void;
 }
 
-function ActionButton({ label, primary, disabled, onPress }: ButtonProps) {
+function ActionButton({ label, variant = 'ghost', disabled, onPress }: ButtonProps) {
+  const isPrimary = variant === 'primary';
+  const isDanger = variant === 'danger';
   return (
     <Pressable
       accessibilityRole="button"
@@ -47,15 +55,20 @@ function ActionButton({ label, primary, disabled, onPress }: ButtonProps) {
       onPress={disabled ? undefined : onPress}
       style={({ pressed }) => [
         btnStyles.base,
-        primary ? btnStyles.primary : btnStyles.ghost,
+        isPrimary && btnStyles.primary,
+        isDanger && btnStyles.danger,
+        !isPrimary && !isDanger && btnStyles.ghost,
         disabled && btnStyles.disabled,
-        pressed && !disabled && (primary ? btnStyles.primaryPressed : btnStyles.ghostPressed),
+        pressed && !disabled && isPrimary && btnStyles.primaryPressed,
+        pressed && !disabled && isDanger && btnStyles.dangerPressed,
+        pressed && !disabled && !isPrimary && !isDanger && btnStyles.ghostPressed,
       ]}
     >
       <Text
         style={[
           btnStyles.label,
-          primary && btnStyles.labelPrimary,
+          isPrimary && btnStyles.labelPrimary,
+          isDanger && btnStyles.labelDanger,
           disabled && btnStyles.labelDisabled,
         ]}
       >
@@ -68,6 +81,45 @@ function ActionButton({ label, primary, disabled, onPress }: ButtonProps) {
 export default function AboutScreen() {
   const { width } = useWindowDimensions();
   const stack = width < 480;
+  const userId = useUserId();
+  const [deleting, setDeleting] = useState(false);
+
+  const runDeletion = async () => {
+    if (!userId || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteUserData(userId);
+      await resetUserId();
+      if (isWeb) {
+        window.alert('Your data has been deleted.');
+      } else {
+        Alert.alert('Done', 'Your data has been deleted.');
+      }
+    } catch {
+      const msg = 'Could not delete your data. Please try again.';
+      if (isWeb) window.alert(msg);
+      else Alert.alert('Error', msg);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeletePress = () => {
+    if (!userId || deleting) return;
+    const title = 'Delete all your data?';
+    const message =
+      'This will permanently remove every event and conversation tied to your account. This cannot be undone.';
+    if (isWeb) {
+      if (window.confirm(`${title}\n\n${message}`)) {
+        void runDeletion();
+      }
+    } else {
+      Alert.alert(title, message, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => void runDeletion() },
+      ]);
+    }
+  };
 
   // On web, surface the store CTAs. On native, invite the user to the
   // web version. Apple Store still pending; Google Play is live.
@@ -77,7 +129,7 @@ export default function AboutScreen() {
       {stack ? <View style={{ height: spacing.sm }} /> : <View style={{ width: spacing.md }} />}
       <ActionButton
         label="Get it on Google Play"
-        primary
+        variant="primary"
         onPress={() =>
           openUrl(
             'https://play.google.com/store/apps/details?id=fr.tsp.jimithechatbot',
@@ -89,7 +141,7 @@ export default function AboutScreen() {
     <View style={styles.ctaCenter}>
       <ActionButton
         label="Visit the web version"
-        primary
+        variant="primary"
         onPress={() => openUrl('https://jimi.julsql.fr/')}
       />
     </View>
@@ -127,6 +179,22 @@ export default function AboutScreen() {
             </View>
 
             <View style={styles.ctaSection}>{ctas}</View>
+
+            <View style={styles.dangerSection}>
+              <Text style={styles.dangerTitle}>Your data</Text>
+              <Text style={styles.dangerBody}>
+                Permanently delete every event and conversation tied to
+                your account. This cannot be undone.
+              </Text>
+              <View style={styles.dangerButtonRow}>
+                <ActionButton
+                  label={deleting ? 'Deleting…' : 'Delete my data'}
+                  variant="danger"
+                  disabled={!userId || deleting}
+                  onPress={handleDeletePress}
+                />
+              </View>
+            </View>
 
             {/* Privacy is a web-only concern — the mobile apps surface
                 privacy info via their respective stores. */}
@@ -204,6 +272,31 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   ctaSection: { marginTop: spacing.xl, alignItems: 'center' },
+  dangerSection: {
+    marginTop: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.offlineSoft,
+    backgroundColor: colors.surface,
+  },
+  dangerTitle: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    fontWeight: '600',
+    color: colors.offline,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+  },
+  dangerBody: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.body,
+    color: colors.text,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  dangerButtonRow: { alignItems: 'center' },
   footer: {
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
@@ -246,6 +339,12 @@ const btnStyles = StyleSheet.create({
     borderColor: colors.border,
   },
   ghostPressed: { backgroundColor: colors.surfaceMuted },
+  danger: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.offline,
+  },
+  dangerPressed: { backgroundColor: colors.offlineSoft },
   disabled: {
     backgroundColor: colors.surfaceMuted,
     borderColor: colors.border,
@@ -258,5 +357,6 @@ const btnStyles = StyleSheet.create({
     color: colors.text,
   },
   labelPrimary: { color: colors.surface },
+  labelDanger: { color: colors.offline },
   labelDisabled: { color: colors.textMuted, fontWeight: '500' },
 });
