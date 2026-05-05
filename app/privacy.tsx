@@ -1,4 +1,4 @@
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBar } from '../components/AppBar';
@@ -16,8 +16,8 @@ import {
 // If a deep link or refresh lands here on mobile, send the user back home.
 const isWeb = Platform.OS === 'web';
 
-const LAST_UPDATED = 'April 29, 2026';
-const CONTACT_EMAIL = 'julsql1@gmail.com';
+const LAST_UPDATED = 'May 5, 2026';
+const CONTACT_EMAIL = 'contact@jimi.julsql.fr';
 
 interface SectionProps {
   eyebrow: string;
@@ -37,6 +37,18 @@ function Section({ eyebrow, title, children }: SectionProps) {
 
 function P({ children }: { children: React.ReactNode }) {
   return <Text style={styles.paragraph}>{children}</Text>;
+}
+
+function EmailLink() {
+  return (
+    <Text
+      style={styles.link}
+      onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}`)}
+      accessibilityRole="link"
+    >
+      {CONTACT_EMAIL}
+    </Text>
+  );
 }
 
 function Bullet({ children }: { children: React.ReactNode }) {
@@ -163,8 +175,7 @@ export default function PrivacyScreen() {
               <P>
                 To exercise any of these, find your <Text style={styles.code}>userId</Text>{' '}
                 in the About page footer and email us at{' '}
-                <Text style={styles.bold}>{CONTACT_EMAIL}</Text>. We respond
-                within 30 days.
+                <EmailLink />. We respond within 30 days.
               </P>
             </Section>
 
@@ -185,8 +196,7 @@ export default function PrivacyScreen() {
 
             <Section eyebrow="Contact" title="Talk to us">
               <P>
-                Email <Text style={styles.bold}>{CONTACT_EMAIL}</Text>. We
-                read everything that comes in.
+                Email <EmailLink />. We read everything that comes in.
               </P>
             </Section>
           </View>
@@ -278,6 +288,11 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   bold: { fontWeight: '600' },
+  link: {
+    fontWeight: '600',
+    color: colors.accent,
+    textDecorationLine: 'underline',
+  },
   code: {
     fontFamily: Platform.select({
       web: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
