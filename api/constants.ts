@@ -1,18 +1,28 @@
 // Base URL of the JIMI Spring Boot API.
 //
-// Resolution order (the first non-empty value wins):
-//   1. process.env.EXPO_PUBLIC_API_URL — baked into the bundle at build time.
-//      Set as a build arg in Docker (`--build-arg EXPO_PUBLIC_API_URL=...`)
-//      so the same image can be reused across environments.
-//   2. The fallback below — used for local dev against a Spring Boot API
-//      running on http://localhost:8080.
+// `EXPO_PUBLIC_API_URL` is baked into the JS bundle at build time. It must be
+// provided by:
+//   - `.env` for local Metro / `expo run:*`
+//   - `eas.json` `env` block for EAS builds (App Store / TestFlight)
+//   - `--build-arg` for the Docker web image
 //
-// Examples:
-//   - Dev:  http://localhost:8080
-//   - Prod: https://jimi-api.julsql.fr
-const FALLBACK_BASE_URL = 'http://localhost:8080';
+// In dev (Metro), we fall back to localhost so a missing `.env` doesn't block
+// quick iteration. In any non-dev build (Release IPA / APK / web), we refuse
+// to start: a previous App Store reject was caused by the localhost fallback
+// shipping in a Release binary.
+const DEV_FALLBACK_BASE_URL = 'http://localhost:8080';
+
+function resolveBaseUrl(): string {
+  const fromEnv = process.env.EXPO_PUBLIC_API_URL;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  if (__DEV__) return DEV_FALLBACK_BASE_URL;
+  throw new Error(
+    'EXPO_PUBLIC_API_URL is not defined in this Release build. ' +
+      'Set it in eas.json (env block) or as a Docker build-arg.',
+  );
+}
 
 export const ApiConstants = {
-  baseUrl: process.env.EXPO_PUBLIC_API_URL || FALLBACK_BASE_URL,
+  baseUrl: resolveBaseUrl(),
   sendMessage: '/chat',
 } as const;
