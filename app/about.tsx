@@ -198,16 +198,37 @@ export default function AboutScreen() {
 
             {/* Privacy is a web-only concern — the mobile apps surface
                 privacy info via their respective stores. Support is also
-                web-only; native shells link to the hosted page externally. */}
+                web-only; native shells link to the hosted page externally.
+                The userId is exposed here so users can quote it when
+                contacting support (referenced from /support). */}
             {isWeb ? (
               <View style={styles.footer}>
-                <Link href="/support" style={styles.footerLink}>
-                  Support
-                </Link>
-                <Text style={styles.footerSeparator}>·</Text>
-                <Link href="/privacy" style={styles.footerLink}>
-                  Privacy Policy
-                </Link>
+                <View style={styles.footerLinks}>
+                  <Link href="/support" style={styles.footerLink}>
+                    Support
+                  </Link>
+                  <Text style={styles.footerSeparator}>·</Text>
+                  <Link href="/privacy" style={styles.footerLink}>
+                    Privacy Policy
+                  </Link>
+                </View>
+                {userId ? (
+                  <Pressable
+                    onPress={() => {
+                      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                        void navigator.clipboard.writeText(userId);
+                      }
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy your user ID"
+                    style={styles.userIdRow}
+                  >
+                    <Text style={styles.userIdLabel}>Your user ID:</Text>
+                    <Text style={styles.userIdValue} selectable>
+                      {userId}
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -305,12 +326,15 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
-    flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   footerLink: {
     fontFamily: typography.bodyFamily,
@@ -322,6 +346,29 @@ const styles = StyleSheet.create({
     fontFamily: typography.bodyFamily,
     fontSize: typography.caption,
     color: colors.hint,
+  },
+  userIdRow: {
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  userIdLabel: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    color: colors.hint,
+  },
+  userIdValue: {
+    fontFamily: Platform.select({
+      web: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+    fontSize: typography.caption,
+    color: colors.textMuted,
   },
   ctaRow: {
     flexDirection: 'row',

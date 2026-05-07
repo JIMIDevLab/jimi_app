@@ -1,5 +1,5 @@
 import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBar } from '../components/AppBar';
 import {
@@ -232,12 +232,28 @@ export default function SupportScreen() {
 
             <Section eyebrow="More" title="Other resources">
               <Bullet>
-                <Text style={styles.bold}>Privacy Policy</Text> — what we
-                collect and why. Linked from the About page footer.
+                <Link href="/privacy" style={styles.link}>
+                  Privacy Policy
+                </Link>
+                <Text> — what we collect and why.</Text>
               </Bullet>
               <Bullet>
-                <Text style={styles.bold}>About</Text> — app description and
-                store links.
+                <Link href="/about" style={styles.link}>
+                  About
+                </Link>
+                <Text> — app description, store links and your user ID.</Text>
+              </Bullet>
+              <Bullet>
+                <Link href="/home" style={styles.link}>
+                  Chat
+                </Link>
+                <Text> — talk to Jimi.</Text>
+              </Bullet>
+              <Bullet>
+                <Link href="/schedule" style={styles.link}>
+                  Calendar
+                </Link>
+                <Text> — see all your saved events.</Text>
               </Bullet>
             </Section>
           </View>
