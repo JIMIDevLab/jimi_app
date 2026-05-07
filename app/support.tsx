@@ -243,18 +243,6 @@ export default function SupportScreen() {
                 </Link>
                 <Text> — app description, store links and your user ID.</Text>
               </Bullet>
-              <Bullet>
-                <Link href="/home" style={styles.link}>
-                  Chat
-                </Link>
-                <Text> — talk to Jimi.</Text>
-              </Bullet>
-              <Bullet>
-                <Link href="/schedule" style={styles.link}>
-                  Calendar
-                </Link>
-                <Text> — see all your saved events.</Text>
-              </Bullet>
             </Section>
           </View>
         </ScrollView>
