@@ -197,9 +197,14 @@ export default function AboutScreen() {
             </View>
 
             {/* Privacy is a web-only concern — the mobile apps surface
-                privacy info via their respective stores. */}
+                privacy info via their respective stores. Support is also
+                web-only; native shells link to the hosted page externally. */}
             {isWeb ? (
               <View style={styles.footer}>
+                <Link href="/support" style={styles.footerLink}>
+                  Support
+                </Link>
+                <Text style={styles.footerSeparator}>·</Text>
                 <Link href="/privacy" style={styles.footerLink}>
                   Privacy Policy
                 </Link>
@@ -300,7 +305,10 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
@@ -309,6 +317,11 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     color: colors.textMuted,
     textDecorationLine: 'underline',
+  },
+  footerSeparator: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    color: colors.hint,
   },
   ctaRow: {
     flexDirection: 'row',
