@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Platform,
   Image,
-  useWindowDimensions,
   Linking,
   Alert,
 } from 'react-native';
@@ -79,8 +78,6 @@ function ActionButton({ label, variant = 'ghost', disabled, onPress }: ButtonPro
 }
 
 export default function AboutScreen() {
-  const { width } = useWindowDimensions();
-  const stack = width < 480;
   const userId = useUserId();
   const [deleting, setDeleting] = useState(false);
 
@@ -122,11 +119,18 @@ export default function AboutScreen() {
   };
 
   // On web, surface the store CTAs. On native, invite the user to the
-  // web version. Apple Store still pending; Google Play is live.
+  // web version. Both stores are live. Buttons stay side-by-side even
+  // on narrow viewports — wrap shrinks them rather than stacking.
   const ctas = isWeb ? (
-    <View style={[styles.ctaRow, stack && styles.ctaColumn]}>
-      <ActionButton label="Apple Store — coming soon" disabled />
-      {stack ? <View style={{ height: spacing.sm }} /> : <View style={{ width: spacing.md }} />}
+    <View style={styles.ctaRow}>
+      <ActionButton
+        label="Get it on the App Store"
+        variant="primary"
+        onPress={() =>
+          openUrl('https://apps.apple.com/fr/app/jimi-the-chatbot/id6764839053')
+        }
+      />
+      <View style={{ width: spacing.md }} />
       <ActionButton
         label="Get it on Google Play"
         variant="primary"
@@ -374,8 +378,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
-  ctaColumn: { flexDirection: 'column' },
   ctaCenter: { width: '100%', alignItems: 'center' },
 });
 
