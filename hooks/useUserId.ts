@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 
 const STORAGE_KEY = 'jimi.userId';
 const subscribers = new Set<(id: string) => void>();
 
+// Cryptographically secure id (UUID v4). Math.random() is not a CSPRNG
+// and was flagged by CodeQL — expo-crypto uses the platform's secure RNG
+// (Web Crypto on web, native SecRandom/SecureRandom on iOS/Android).
 function generateUserId(): string {
-  return Math.floor(Math.random() * 100000).toString();
+  return Crypto.randomUUID();
 }
 
 // Generates a brand-new userId, persists it, and notifies every live
