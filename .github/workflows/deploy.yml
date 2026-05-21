@@ -21,6 +21,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Least privilege: this workflow only SSHes out to the server and never
+# calls the GitHub API, so GITHUB_TOKEN needs no write scopes.
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-app
   cancel-in-progress: false
