@@ -5,6 +5,10 @@ interface ChatRequestBody {
   userId: string;
   message: string;
   conversationId: string | null;
+  // This app is the calendar-aware client: opt into connected-calendar mode
+  // (NEEDS_CONNECTION + confirmation). Omitting it would get the API's legacy
+  // local-DB behaviour, reserved for the older deployed apps.
+  calendarMode: true;
 }
 
 interface ConfirmRequestBody {
@@ -33,7 +37,7 @@ export async function sendMessage(
   userId: string,
   conversationId: string | null = null,
 ): Promise<ChatApiResponse> {
-  const body: ChatRequestBody = { userId, message, conversationId };
+  const body: ChatRequestBody = { userId, message, conversationId, calendarMode: true };
   const json = await postApi<unknown>(ApiConstants.sendMessage, body);
   return parseChatResponse(json);
 }
