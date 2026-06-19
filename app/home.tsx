@@ -28,9 +28,26 @@ import {
   spacing,
   typography,
 } from '../theme/styles';
-import { sendMessage } from '../api/apiServicePost';
-import { MessageModel } from '../models/Message';
+import { ChatActions } from '../components/ChatActions';
+import { sendMessage, confirmAction } from '../api/apiServicePost';
+import { connectGoogle } from '../api/calendarConnection';
+import { openEvent } from '../api/nativeCalendar';
+import { ChatApiResponse, MessageModel } from '../models/Message';
 import { useApiHealth } from '../contexts/ApiHealthContext';
+
+// Turns a server reply into a bot message, attaching the right inline action:
+// connect a calendar, confirm an edit/delete, or open the affected event.
+function toBotMessage(answer: ChatApiResponse, retryMessage?: string): MessageModel {
+  let action: MessageModel['action'];
+  if (answer.status === 'NEEDS_CONNECTION') {
+    action = { kind: 'connect', retryMessage };
+  } else if (answer.status === 'AWAITING_CONFIRMATION' && answer.conversationId) {
+    action = { kind: 'confirm', conversationId: answer.conversationId };
+  } else if (answer.eventUrl) {
+    action = { kind: 'openEvent', eventUrl: answer.eventUrl };
+  }
+  return { content: answer.message, sender: 'Chatbot', timestamp: Date.now(), action };
+}
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<MessageModel[]>([]);
@@ -73,16 +90,11 @@ export default function ChatScreen() {
         }
         // Server keeps the draft alive while status is AWAITING_INFO; clear
         // it once the conversation completes so the next message starts fresh.
+        // A pending confirmation carries its conversationId inside the message
+        // action instead, so typing a new message starts a fresh extraction.
         conversationIdRef.current =
           answer.status === 'AWAITING_INFO' ? answer.conversationId : null;
-        setMessages((prev) => [
-          ...prev,
-          {
-            content: answer.message,
-            sender: 'Chatbot',
-            timestamp: Date.now(),
-          },
-        ]);
+        setMessages((prev) => [...prev, toBotMessage(answer, trimmed)]);
       } catch (err) {
         reportFailure(
           err instanceof Error ? err.message : 'Something went wrong.',
@@ -94,8 +106,81 @@ export default function ChatScreen() {
     [messages, pending, online, userId, reportFailure],
   );
 
-  function renderItem({ item }: ListRenderItemInfo<MessageModel>) {
-    return <ChatBubble message={item} />;
+  // Removes the inline buttons from a message once its action has been taken,
+  // so a confirm/connect can't be fired twice.
+  const consumeAction = useCallback((index: number) => {
+    setMessages((prev) =>
+      prev.map((m, i) => (i === index ? { ...m, action: undefined } : m)),
+    );
+  }, []);
+
+  const appendBot = useCallback((content: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { content, sender: 'Chatbot', timestamp: Date.now() },
+    ]);
+  }, []);
+
+  const handleConnect = useCallback(
+    async (index: number, retryMessage?: string) => {
+      if (!userId) return;
+      const connected = await connectGoogle(userId);
+      consumeAction(index);
+      if (connected) {
+        appendBot('Your calendar is connected. 🎉');
+        if (retryMessage) submit(retryMessage);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            content: "I couldn't confirm the connection. Want to try again?",
+            sender: 'Chatbot',
+            timestamp: Date.now(),
+            action: { kind: 'connect', retryMessage },
+          },
+        ]);
+      }
+    },
+    [userId, consumeAction, appendBot, submit],
+  );
+
+  const handleConfirm = useCallback(
+    async (index: number, conversationId: string, confirmed: boolean) => {
+      if (!userId) return;
+      consumeAction(index);
+      setPending(true);
+      try {
+        const answer = await confirmAction(userId, conversationId, confirmed);
+        setMessages((prev) => [...prev, toBotMessage(answer)]);
+      } catch (err) {
+        reportFailure(
+          err instanceof Error ? err.message : 'Something went wrong.',
+        );
+      } finally {
+        setPending(false);
+      }
+    },
+    [userId, consumeAction, reportFailure],
+  );
+
+  function renderItem({ item, index }: ListRenderItemInfo<MessageModel>) {
+    return (
+      <>
+        <ChatBubble message={item} />
+        {item.action ? (
+          <ChatActions
+            action={item.action}
+            onConnect={() => handleConnect(index, item.action?.retryMessage)}
+            onConfirm={(confirmed) =>
+              item.action?.conversationId
+                ? handleConfirm(index, item.action.conversationId, confirmed)
+                : undefined
+            }
+            onOpenEvent={(url) => openEvent(url)}
+          />
+        ) : null}
+      </>
+    );
   }
 
   // Web only: a multiline TextInput swallows onSubmitEditing, so we hook
