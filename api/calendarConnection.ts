@@ -1,12 +1,35 @@
 import * as WebBrowser from 'expo-web-browser';
 import { ApiConstants } from './constants';
 
-// Manages linking the user's real calendar (Google for now) and checking
-// connection status. No calendar content is fetched here — JIMI reads/writes
-// the calendar live on the server side; the app only triggers OAuth and asks
-// "which providers are connected?".
+// Manages linking the user's real calendar and checking connection status.
+// No calendar content is fetched here — JIMI reads/writes the calendar live on
+// the server side; the app only triggers the connect flow and asks "which
+// providers are connected?".
+//
+// Two connect shapes:
+//   - OAuth  (Google, Microsoft) → open the provider consent screen in a
+//     secure browser session, then poll /connections (the server records the
+//     account during the OAuth callback).
+//   - CalDAV (Apple iCloud / other) → POST credentials directly; the server
+//     validates them and replies synchronously, so no polling is needed.
 
 const RETURN_URL = 'jimi://connected';
+
+// OAuth providers. CalDAV is intentionally excluded — it has a different,
+// credentials-based flow and is handled by `connectCalDav`.
+export type OAuthProvider = 'google' | 'microsoft';
+export type CalendarProvider = OAuthProvider | 'caldav';
+
+export interface CalDavCredentials {
+  serverUrl: string;
+  username: string;
+  password: string;
+}
+
+export interface CalDavResult {
+  ok: boolean;
+  reason?: string;
+}
 
 export async function fetchConnectedProviders(userId: string): Promise<string[]> {
   const url = `${ApiConstants.baseUrl}${ApiConstants.connections}?userId=${encodeURIComponent(userId)}`;
@@ -23,12 +46,15 @@ export async function isCalendarConnected(userId: string): Promise<boolean> {
   return (await fetchConnectedProviders(userId)).length > 0;
 }
 
-// Opens Google's consent screen in a secure auth session, then verifies the
-// link by polling /connections (the server records the account during the
-// OAuth callback). Returns true once the calendar is connected.
-export async function connectGoogle(userId: string): Promise<boolean> {
+// Opens the provider's consent screen in a secure auth session, then verifies
+// the link by polling /connections. Returns true once the calendar is
+// connected. Shared by Google and Microsoft — only the path differs.
+export async function connectOAuth(
+  userId: string,
+  provider: OAuthProvider,
+): Promise<boolean> {
   const authUrl =
-    `${ApiConstants.baseUrl}${ApiConstants.connectGoogle}?userId=${encodeURIComponent(userId)}`;
+    `${ApiConstants.baseUrl}${ApiConstants.connect(provider)}?userId=${encodeURIComponent(userId)}`;
   try {
     await WebBrowser.openAuthSessionAsync(authUrl, RETURN_URL);
   } catch {
@@ -38,9 +64,35 @@ export async function connectGoogle(userId: string): Promise<boolean> {
   return pollConnected(userId);
 }
 
-export async function disconnectGoogle(userId: string): Promise<void> {
+// CalDAV uses credentials instead of OAuth: POST them and trust the server's
+// synchronous verdict. Returns `{ ok }` plus a human-readable `reason` on
+// failure so the form can surface it inline.
+export async function connectCalDav(
+  userId: string,
+  credentials: CalDavCredentials,
+): Promise<CalDavResult> {
+  const url = `${ApiConstants.baseUrl}${ApiConstants.connectCalDav}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ userId, ...credentials }),
+    });
+    if (res.ok) {
+      const json = (await res.json().catch(() => null)) as { connected?: unknown } | null;
+      return { ok: json?.connected === true };
+    }
+    const err = (await res.json().catch(() => null)) as { reason?: unknown } | null;
+    const reason = typeof err?.reason === 'string' ? err.reason : undefined;
+    return { ok: false, reason };
+  } catch {
+    return { ok: false, reason: 'Network error — check the server URL and your connection.' };
+  }
+}
+
+export async function disconnect(userId: string, provider: CalendarProvider): Promise<void> {
   const url =
-    `${ApiConstants.baseUrl}${ApiConstants.connectGoogle}?userId=${encodeURIComponent(userId)}`;
+    `${ApiConstants.baseUrl}${ApiConstants.connect(provider)}?userId=${encodeURIComponent(userId)}`;
   await fetch(url, { method: 'DELETE' });
 }
 
