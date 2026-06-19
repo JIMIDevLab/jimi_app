@@ -29,8 +29,14 @@ import {
   typography,
 } from '../theme/styles';
 import { ChatActions } from '../components/ChatActions';
+import { ConnectCalendarSheet } from '../components/ConnectCalendarSheet';
 import { sendMessage, confirmAction } from '../api/apiServicePost';
-import { connectGoogle } from '../api/calendarConnection';
+import {
+  connectOAuth,
+  connectCalDav,
+  type CalDavCredentials,
+  type OAuthProvider,
+} from '../api/calendarConnection';
 import { openEvent } from '../api/nativeCalendar';
 import { ChatApiResponse, MessageModel } from '../models/Message';
 import { useApiHealth } from '../contexts/ApiHealthContext';
@@ -55,6 +61,13 @@ export default function ChatScreen() {
   const [pending, setPending] = useState(false);
   const conversationIdRef = useRef<string | null>(null);
   const listRef = useRef<FlatList<MessageModel>>(null);
+  // When a 'connect' action is tapped we open the provider picker; the index
+  // and retryMessage of the originating action are kept so success can consume
+  // that action and replay the original message.
+  const [connectSheet, setConnectSheet] = useState<{
+    index: number;
+    retryMessage?: string;
+  } | null>(null);
   const userId = useUserId();
 
   const { status, errorReason, recheck, reportFailure } = useApiHealth();
@@ -121,27 +134,43 @@ export default function ChatScreen() {
     ]);
   }, []);
 
-  const handleConnect = useCallback(
-    async (index: number, retryMessage?: string) => {
-      if (!userId) return;
-      const connected = await connectGoogle(userId);
-      consumeAction(index);
-      if (connected) {
-        appendBot('Your calendar is connected. 🎉');
-        if (retryMessage) submit(retryMessage);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            content: "I couldn't confirm the connection. Want to try again?",
-            sender: 'Chatbot',
-            timestamp: Date.now(),
-            action: { kind: 'connect', retryMessage },
-          },
-        ]);
-      }
+  // Tapping the inline 'Connect a calendar' button no longer runs Google
+  // directly — it opens the provider picker. The picker reports success and we
+  // finish the flow here (consume the action, confirm, replay the message).
+  const openConnectSheet = useCallback((index: number, retryMessage?: string) => {
+    setConnectSheet({ index, retryMessage });
+  }, []);
+
+  const finishConnect = useCallback(() => {
+    if (connectSheet) {
+      consumeAction(connectSheet.index);
+      appendBot('Your calendar is connected. \u{1F389}');
+      if (connectSheet.retryMessage) submit(connectSheet.retryMessage);
+    }
+    setConnectSheet(null);
+  }, [connectSheet, consumeAction, appendBot, submit]);
+
+  // OAuth providers (Google, Microsoft): on success we close the sheet and run
+  // finishConnect. On failure we return false so the sheet shows its own retry
+  // hint and stays open.
+  const handleConnectOAuth = useCallback(
+    async (provider: OAuthProvider): Promise<boolean> => {
+      if (!userId) return false;
+      const ok = await connectOAuth(userId, provider);
+      if (ok) finishConnect();
+      return ok;
     },
-    [userId, consumeAction, appendBot, submit],
+    [userId, finishConnect],
+  );
+
+  const handleConnectCalDav = useCallback(
+    async (credentials: CalDavCredentials) => {
+      if (!userId) return { ok: false, reason: 'Not signed in yet.' };
+      const result = await connectCalDav(userId, credentials);
+      if (result.ok) finishConnect();
+      return result;
+    },
+    [userId, finishConnect],
   );
 
   const handleConfirm = useCallback(
@@ -170,7 +199,7 @@ export default function ChatScreen() {
         {item.action ? (
           <ChatActions
             action={item.action}
-            onConnect={() => handleConnect(index, item.action?.retryMessage)}
+            onConnect={() => openConnectSheet(index, item.action?.retryMessage)}
             onConfirm={(confirmed) =>
               item.action?.conversationId
                 ? handleConfirm(index, item.action.conversationId, confirmed)
@@ -332,6 +361,12 @@ export default function ChatScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+        <ConnectCalendarSheet
+          visible={connectSheet !== null}
+          onClose={() => setConnectSheet(null)}
+          onConnectOAuth={handleConnectOAuth}
+          onConnectCalDav={handleConnectCalDav}
+        />
       </View>
     </SafeAreaView>
   );

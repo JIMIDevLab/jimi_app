@@ -30,7 +30,7 @@ export function ChatActions({ action, onConnect, onConfirm, onOpenEvent }: Props
     return (
       <View style={styles.wrap}>
         <Button
-          label="Connect Google Calendar"
+          label="Connect a calendar"
           variant="primary"
           busy={busy}
           onPress={() => run(() => onConnect())}

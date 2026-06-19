@@ -39,13 +39,14 @@ jimi_app/
 ├── api/
 │   ├── constants.ts            # baseUrl + endpoint paths
 │   ├── apiServicePost.ts       # POST /chat + POST /chat/confirm clients
-│   ├── calendarConnection.ts   # OAuth connect + GET/DELETE /connections
+│   ├── calendarConnection.ts   # multi-provider connect (OAuth + CalDAV) + GET/DELETE /connections
 │   ├── nativeCalendar.ts       # deep-link into the device calendar app
 │   └── healthcheck.ts          # /chat probe used at startup
 ├── components/
 │   ├── AppBar.tsx              # logo + status pill + calendar/info buttons
 │   ├── ChatBubble.tsx          # one message bubble (uses RichText for bot)
 │   ├── ChatActions.tsx         # inline buttons: connect / confirm / open event
+│   ├── ConnectCalendarSheet.tsx# provider picker (Google/Microsoft OAuth + CalDAV form)
 │   ├── RichText.tsx            # markdown-lite renderer (**bold**, bullets…)
 │   ├── EmptyChat.tsx           # initial state w/ suggestions
 │   ├── TypingIndicator.tsx     # 3-dot animation while waiting for /chat
@@ -91,8 +92,16 @@ returns
 Status drives the inline action attached to the bot bubble (see
 `components/ChatActions.tsx` + `toBotMessage` in `home.tsx`):
 - `AWAITING_INFO` → keep `conversationId`, ask for the missing fields.
-- `NEEDS_CONNECTION` → show "Connect Google Calendar" (OAuth via
-  `api/calendarConnection.ts`); on success the triggering message is replayed.
+- `NEEDS_CONNECTION` → show a single "Connect a calendar" button that opens a
+  provider picker (`components/ConnectCalendarSheet.tsx`):
+    - **Google Calendar** / **Outlook / Microsoft 365** → OAuth in a browser
+      session (`connectOAuth(userId, provider)`), then poll `/connections`.
+    - **Apple iCloud / Other (CalDAV)** → a credentials form (server URL,
+      username, app-specific password) that POSTs to `/connect/caldav`
+      (`connectCalDav`) and shows inline errors on failure.
+  On any success the picker closes, a "calendar connected" bot message is
+  posted, and the triggering message is replayed (`finishConnect` in
+  `home.tsx`).
 - `AWAITING_CONFIRMATION` → show Confirm/Cancel; they call
   `POST /chat/confirm { userId, conversationId, confirmed }`. The
   `conversationId` lives in the message action, NOT in the shared ref, so
