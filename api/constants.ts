@@ -25,4 +25,7 @@ function resolveBaseUrl(): string {
 export const ApiConstants = {
   baseUrl: resolveBaseUrl(),
   sendMessage: '/chat',
+  confirm: '/chat/confirm',
+  connections: '/connections',
+  connectGoogle: '/connect/google',
 } as const;

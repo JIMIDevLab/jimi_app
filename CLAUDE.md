@@ -31,18 +31,21 @@ jimi_app/
 ├── app/                        # Expo Router routes (file-based)
 │   ├── _layout.tsx             # Stack root + ApiHealthProvider + theme
 │   ├── index.tsx               # → redirect to /home
-│   ├── home.tsx                # Chat screen
-│   ├── schedule.tsx            # Read-only event list (GET /agenda)
+│   ├── home.tsx                # Chat screen (drives connect/confirm actions)
 │   ├── about.tsx               # About
 │   └── error.tsx               # Error page
+│   # NOTE: there is no in-app calendar view. The AppBar calendar button
+│   # deep-links to the device's native calendar app (api/nativeCalendar.ts).
 ├── api/
-│   ├── constants.ts            # baseUrl resolution (env var → fallback)
-│   ├── apiServicePost.ts       # POST /chat client
-│   ├── agendaService.ts        # GET /agenda client (no LLM)
+│   ├── constants.ts            # baseUrl + endpoint paths
+│   ├── apiServicePost.ts       # POST /chat + POST /chat/confirm clients
+│   ├── calendarConnection.ts   # OAuth connect + GET/DELETE /connections
+│   ├── nativeCalendar.ts       # deep-link into the device calendar app
 │   └── healthcheck.ts          # /chat probe used at startup
 ├── components/
 │   ├── AppBar.tsx              # logo + status pill + calendar/info buttons
 │   ├── ChatBubble.tsx          # one message bubble (uses RichText for bot)
+│   ├── ChatActions.tsx         # inline buttons: connect / confirm / open event
 │   ├── RichText.tsx            # markdown-lite renderer (**bold**, bullets…)
 │   ├── EmptyChat.tsx           # initial state w/ suggestions
 │   ├── TypingIndicator.tsx     # 3-dot animation while waiting for /chat
@@ -79,24 +82,26 @@ returns
 ```json
 {
   "conversationId": "<uuid|null>",
-  "status": "AWAITING_INFO" | "COMPLETED",
+  "status": "AWAITING_INFO" | "AWAITING_CONFIRMATION" | "NEEDS_CONNECTION" | "COMPLETED" | "CANCELLED",
   "message": "...",
-  "missingFields": []
+  "missingFields": [],
+  "eventUrl": "<deep link to the event|null>"
 }
 ```
-The frontend keeps `conversationId` while `status === "AWAITING_INFO"`
-and clears it on `COMPLETED` so the next message starts a fresh
-extraction.
+Status drives the inline action attached to the bot bubble (see
+`components/ChatActions.tsx` + `toBotMessage` in `home.tsx`):
+- `AWAITING_INFO` → keep `conversationId`, ask for the missing fields.
+- `NEEDS_CONNECTION` → show "Connect Google Calendar" (OAuth via
+  `api/calendarConnection.ts`); on success the triggering message is replayed.
+- `AWAITING_CONFIRMATION` → show Confirm/Cancel; they call
+  `POST /chat/confirm { userId, conversationId, confirmed }`. The
+  `conversationId` lives in the message action, NOT in the shared ref, so
+  typing a new message starts a fresh extraction.
+- `COMPLETED` with `eventUrl` → "Open in calendar".
 
-`GET /agenda?userId=u1` — read-only event list, **no LLM in the loop**:
-```json
-[
-  { "id": 1, "date": "2026-04-28", "beginTime": "13:00:00",
-    "endTime": "14:00:00", "type": "PERSONAL", "title": "Lunch with Alex" }
-]
-```
-This is what the `/schedule` page renders. By design the LLM never
-fabricates the visualisation — the page reads straight from the DB.
+There is **no `/agenda` endpoint and no in-app list** anymore: the user's real
+calendar is the source of truth. The AppBar calendar button deep-links to the
+native calendar app (`api/nativeCalendar.ts`).
 
 ## Healthcheck (startup)
 

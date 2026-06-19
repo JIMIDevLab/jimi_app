@@ -17,6 +17,7 @@ import {
   typography,
 } from '../theme/styles';
 import { useApiHealth, type ApiStatus } from '../contexts/ApiHealthContext';
+import { openNativeCalendar } from '../api/nativeCalendar';
 
 const LOGO_SIZE = 40;
 
@@ -77,10 +78,7 @@ export function AppBar() {
   const { status } = useApiHealth();
 
   const onAbout = pathname === '/about';
-  const onSchedule = pathname === '/schedule';
   // Toggle off → always go straight to the chat, regardless of history.
-  // (Pressing About from Schedule then re-tapping About should land on
-  // /home, not back on /schedule.)
   const handleInfoPress = () => {
     if (onAbout) {
       router.replace('/home');
@@ -88,12 +86,10 @@ export function AppBar() {
       router.push('/about');
     }
   };
-  const handleSchedulePress = () => {
-    if (onSchedule) {
-      router.replace('/home');
-    } else {
-      router.push('/schedule');
-    }
+  // No in-app calendar view: open the device's calendar app directly so the
+  // user always sees their real, live calendar (the single source of truth).
+  const handleCalendarPress = () => {
+    void openNativeCalendar();
   };
 
   return (
@@ -124,20 +120,19 @@ export function AppBar() {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={onSchedule ? 'Back' : 'Schedule'}
-        accessibilityState={{ selected: onSchedule }}
-        onPress={handleSchedulePress}
+        accessibilityLabel="Open calendar app"
+        onPress={handleCalendarPress}
         style={({ pressed }) => [styles.iconButton, pressed && styles.iconPressed]}
       >
-        <View style={[styles.calendarIcon, onSchedule && styles.calendarIconActive]}>
-          <View style={[styles.calendarHeader, onSchedule && styles.calendarHeaderActive]} />
+        <View style={styles.calendarIcon}>
+          <View style={styles.calendarHeader} />
           <View style={styles.calendarDotsRow}>
-            <View style={[styles.calendarDot, onSchedule && styles.calendarDotActive]} />
-            <View style={[styles.calendarDot, onSchedule && styles.calendarDotActive]} />
+            <View style={styles.calendarDot} />
+            <View style={styles.calendarDot} />
           </View>
           <View style={styles.calendarDotsRow}>
-            <View style={[styles.calendarDot, onSchedule && styles.calendarDotActive]} />
-            <View style={[styles.calendarDot, onSchedule && styles.calendarDotActive]} />
+            <View style={styles.calendarDot} />
+            <View style={styles.calendarDot} />
           </View>
         </View>
       </Pressable>

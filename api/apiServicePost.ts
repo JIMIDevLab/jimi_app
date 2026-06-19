@@ -7,6 +7,12 @@ interface ChatRequestBody {
   conversationId: string | null;
 }
 
+interface ConfirmRequestBody {
+  userId: string;
+  conversationId: string;
+  confirmed: boolean;
+}
+
 async function postApi<T>(endpoint: string, body: unknown): Promise<T> {
   const res = await fetch(`${ApiConstants.baseUrl}${endpoint}`, {
     method: 'POST',
@@ -29,5 +35,17 @@ export async function sendMessage(
 ): Promise<ChatApiResponse> {
   const body: ChatRequestBody = { userId, message, conversationId };
   const json = await postApi<unknown>(ApiConstants.sendMessage, body);
+  return parseChatResponse(json);
+}
+
+// Confirms (or declines) a destructive action JIMI proposed. The server
+// executes it on the recorded event ids — the LLM is not consulted here.
+export async function confirmAction(
+  userId: string,
+  conversationId: string,
+  confirmed: boolean,
+): Promise<ChatApiResponse> {
+  const body: ConfirmRequestBody = { userId, conversationId, confirmed };
+  const json = await postApi<unknown>(ApiConstants.confirm, body);
   return parseChatResponse(json);
 }
