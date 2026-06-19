@@ -1,4 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { ApiConstants } from './constants';
 
 // Manages linking the user's real calendar and checking connection status.
@@ -13,7 +14,14 @@ import { ApiConstants } from './constants';
 //   - CalDAV (Apple iCloud / other) → POST credentials directly; the server
 //     validates them and replies synchronously, so no polling is needed.
 
-const RETURN_URL = 'jimi://connected';
+// Where the OAuth callback should bounce the user back to. On native this is
+// the app's custom scheme (jimi://connected); on web it's the app's own https
+// origin (e.g. https://jimi.julsql.fr/connected). We send it to the server so
+// it redirects there — without this the web app got "Safari cannot open
+// jimi://connected" and the connection never confirmed.
+function buildReturnUrl(): string {
+  return Linking.createURL('connected');
+}
 
 // OAuth providers. CalDAV is intentionally excluded — it has a different,
 // credentials-based flow and is handled by `connectCalDav`.
@@ -53,10 +61,12 @@ export async function connectOAuth(
   userId: string,
   provider: OAuthProvider,
 ): Promise<boolean> {
+  const returnUrl = buildReturnUrl();
   const authUrl =
-    `${ApiConstants.baseUrl}${ApiConstants.connect(provider)}?userId=${encodeURIComponent(userId)}`;
+    `${ApiConstants.baseUrl}${ApiConstants.connect(provider)}?userId=${encodeURIComponent(userId)}` +
+    `&returnUrl=${encodeURIComponent(returnUrl)}`;
   try {
-    await WebBrowser.openAuthSessionAsync(authUrl, RETURN_URL);
+    await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
   } catch {
     // Session may be dismissed without a clean return (esp. on web) — the
     // poll below is the source of truth either way.
