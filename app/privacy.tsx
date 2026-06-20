@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppBar } from '../components/AppBar';
+import { fetchRetentionInfo, RetentionInfo } from '../api/retentionInfo';
 import {
   colors,
   layout,
@@ -16,7 +18,7 @@ import {
 // If a deep link or refresh lands here on mobile, send the user back home.
 const isWeb = Platform.OS === 'web';
 
-const LAST_UPDATED = 'May 5, 2026';
+const LAST_UPDATED = 'June 20, 2026';
 const CONTACT_EMAIL = 'contact@jimi.julsql.fr';
 
 interface SectionProps {
@@ -61,6 +63,20 @@ function Bullet({ children }: { children: React.ReactNode }) {
 }
 
 export default function PrivacyScreen() {
+  // Configured retention windows, pulled from the API (RETENTION_* env vars).
+  const [retention, setRetention] = useState<RetentionInfo>({ userDays: 180, contextDays: 30 });
+
+  useEffect(() => {
+    if (!isWeb) return;
+    let cancelled = false;
+    fetchRetentionInfo().then((info) => {
+      if (!cancelled) setRetention(info);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (!isWeb) {
     return <Redirect href="/home" />;
   }
@@ -90,11 +106,23 @@ export default function PrivacyScreen() {
                 It is not linked to your name, email or IP address.
               </Bullet>
               <Bullet>
-                The messages you send to Jimi, and Jimi&apos;s replies.
+                The messages you send to Jimi, and Jimi&apos;s replies. Jimi
+                also keeps a short rolling memory of your most recent messages
+                so it can follow the conversation (e.g. &quot;delete it&quot;).
               </Bullet>
               <Bullet>
-                The calendar events you create through Jimi (date, time,
-                type, title).
+                The calendar events you manage through Jimi. If you haven&apos;t
+                connected a calendar, they&apos;re stored on our server; if you
+                connect one (see below), Jimi writes them straight to{' '}
+                <Text style={styles.bold}>your own calendar</Text> and keeps no
+                copy.
+              </Bullet>
+              <Bullet>
+                If you connect a calendar (Google, Outlook/Microsoft or Apple/
+                CalDAV), the access tokens that let Jimi act on your behalf —
+                stored <Text style={styles.bold}>encrypted</Text> (AES-256-GCM),
+                limited to calendar events only. We never see your password, and
+                we revoke these tokens when you disconnect or delete your data.
               </Bullet>
               <Bullet>
                 Standard server logs (IP address, user agent, request path)
@@ -117,9 +145,12 @@ export default function PrivacyScreen() {
                 train their models.
               </P>
               <P>
-                Calendar entries themselves are stored on our own server
-                (Spring Boot application + MariaDB database) hosted in
-                the European Union, never on Mistral&apos;s side.
+                Calendar entries are never sent to Mistral. If you haven&apos;t
+                connected a calendar, they live on our own server (Spring Boot +
+                MariaDB) in the European Union. If you connect one, Jimi sends
+                them directly to that provider (Google, Microsoft or your CalDAV
+                host) on your behalf, governed by that provider&apos;s own
+                privacy policy.
               </P>
             </Section>
 
@@ -129,8 +160,14 @@ export default function PrivacyScreen() {
                 only (local storage). Clearing your browser data deletes it.
               </Bullet>
               <Bullet>
-                Messages and events: on our server, indexed by{' '}
-                <Text style={styles.code}>userId</Text>.
+                Messages, conversation memory and (if no calendar is connected)
+                events: on our server, indexed by{' '}
+                <Text style={styles.code}>userId</Text>. Connected-calendar
+                events live in your own calendar, not on our server.
+              </Bullet>
+              <Bullet>
+                Calendar access tokens: on our server,{' '}
+                <Text style={styles.bold}>encrypted at rest</Text>.
               </Bullet>
               <Bullet>
                 We don&apos;t use cookies for tracking. The only persisted
@@ -140,14 +177,24 @@ export default function PrivacyScreen() {
 
             <Section eyebrow="Retention" title="How long we keep it">
               <P>
-                Messages and calendar events are kept as long as your
-                <Text style={styles.code}> userId</Text> remains active. If
-                you don&apos;t use Jimi for 12 months, we automatically
-                delete the data tied to your <Text style={styles.code}>userId</Text>.
+                Your data is kept while your{' '}
+                <Text style={styles.code}>userId</Text> stays active. If you
+                don&apos;t use Jimi for{' '}
+                <Text style={styles.bold}>{retention.userDays} days</Text>, we
+                automatically delete everything tied to your{' '}
+                <Text style={styles.code}>userId</Text> — messages, events,
+                conversation memory — and revoke the access to any calendar you
+                connected.
               </P>
               <P>
-                You can delete everything at any time by emailing the
-                address below — see &quot;Your rights&quot;.
+                The short conversation memory Jimi uses to follow the thread is
+                dropped after{' '}
+                <Text style={styles.bold}>{retention.contextDays} days</Text>,
+                even while your account stays active.
+              </P>
+              <P>
+                You can delete everything at any time by emailing the address
+                below — see &quot;Your rights&quot;.
               </P>
             </Section>
 
