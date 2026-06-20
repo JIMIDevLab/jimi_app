@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -24,6 +24,17 @@ import {
 } from '../theme/styles';
 import { useUserId, resetUserId } from '../hooks/useUserId';
 import { deleteUserData } from '../api/userService';
+import {
+  fetchConnectedProviders,
+  disconnect,
+  type CalendarProvider,
+} from '../api/calendarConnection';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  google: 'Google Calendar',
+  microsoft: 'Outlook / Microsoft 365',
+  caldav: 'Apple iCloud / CalDAV',
+};
 
 const isWeb = Platform.OS === 'web';
 
@@ -80,6 +91,52 @@ function ActionButton({ label, variant = 'ghost', disabled, onPress }: ButtonPro
 export default function AboutScreen() {
   const userId = useUserId();
   const [deleting, setDeleting] = useState(false);
+  const [providers, setProviders] = useState<string[]>([]);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    fetchConnectedProviders(userId).then((p) => {
+      if (!cancelled) setProviders(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const runDisconnect = async () => {
+    if (!userId || disconnecting || providers.length === 0) return;
+    setDisconnecting(true);
+    try {
+      await Promise.all(providers.map((p) => disconnect(userId, p as CalendarProvider)));
+      setProviders([]);
+      const msg = 'Calendar disconnected.';
+      if (isWeb) window.alert(msg);
+      else Alert.alert('Done', msg);
+    } catch {
+      const msg = 'Could not disconnect. Please try again.';
+      if (isWeb) window.alert(msg);
+      else Alert.alert('Error', msg);
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const handleDisconnectPress = () => {
+    if (!userId || disconnecting || providers.length === 0) return;
+    const title = 'Disconnect your calendar?';
+    const message =
+      'Jimi will no longer be able to read or write events on your calendar. Your events stay in your calendar.';
+    if (isWeb) {
+      if (window.confirm(`${title}\n\n${message}`)) void runDisconnect();
+    } else {
+      Alert.alert(title, message, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Disconnect', style: 'destructive', onPress: () => void runDisconnect() },
+      ]);
+    }
+  };
 
   const runDeletion = async () => {
     if (!userId || deleting) return;
@@ -183,6 +240,28 @@ export default function AboutScreen() {
             </View>
 
             <View style={styles.ctaSection}>{ctas}</View>
+
+            {providers.length > 0 ? (
+              <View style={styles.calendarSection}>
+                <Text style={styles.sectionTitle}>Connected calendar</Text>
+                <Text style={styles.sectionBody}>
+                  Jimi is connected to{' '}
+                  <Text style={styles.bold}>
+                    {providers.map((p) => PROVIDER_LABELS[p] ?? p).join(', ')}
+                  </Text>
+                  . Disconnecting revokes Jimi&apos;s access; your events stay in
+                  your calendar.
+                </Text>
+                <View style={styles.dangerButtonRow}>
+                  <ActionButton
+                    label={disconnecting ? 'Disconnecting…' : 'Disconnect calendar'}
+                    variant="ghost"
+                    disabled={disconnecting}
+                    onPress={handleDisconnectPress}
+                  />
+                </View>
+              </View>
+            ) : null}
 
             <View style={styles.dangerSection}>
               <Text style={styles.dangerTitle}>Your data</Text>
@@ -327,6 +406,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   dangerButtonRow: { alignItems: 'center' },
+  calendarSection: {
+    marginTop: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  sectionTitle: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    fontWeight: '600',
+    color: colors.accent,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+  },
+  sectionBody: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.body,
+    color: colors.text,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  bold: { fontWeight: '600' },
   footer: {
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
