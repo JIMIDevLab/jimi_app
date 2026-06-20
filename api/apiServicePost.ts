@@ -9,6 +9,19 @@ interface ChatRequestBody {
   // (NEEDS_CONNECTION + confirmation). Omitting it would get the API's legacy
   // local-DB behaviour, reserved for the older deployed apps.
   calendarMode: true;
+  // The device's IANA timezone (e.g. "Europe/Paris") so the server resolves
+  // "today"/"now" and creates events in the user's own timezone.
+  timezone: string;
+}
+
+// The device timezone, used so dates/times are resolved where the user is.
+// Intl is available on web and on React Native (Hermes); fall back to UTC.
+function deviceTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
 }
 
 interface ConfirmRequestBody {
@@ -37,7 +50,13 @@ export async function sendMessage(
   userId: string,
   conversationId: string | null = null,
 ): Promise<ChatApiResponse> {
-  const body: ChatRequestBody = { userId, message, conversationId, calendarMode: true };
+  const body: ChatRequestBody = {
+    userId,
+    message,
+    conversationId,
+    calendarMode: true,
+    timezone: deviceTimezone(),
+  };
   const json = await postApi<unknown>(ApiConstants.sendMessage, body);
   return parseChatResponse(json);
 }
