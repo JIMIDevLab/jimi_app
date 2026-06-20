@@ -17,7 +17,8 @@ import {
   typography,
 } from '../theme/styles';
 import { useApiHealth, type ApiStatus } from '../contexts/ApiHealthContext';
-import { openNativeCalendar } from '../api/nativeCalendar';
+import { openConnectedCalendar } from '../api/nativeCalendar';
+import { useUserId } from '../hooks/useUserId';
 
 const LOGO_SIZE = 40;
 
@@ -76,6 +77,7 @@ export function AppBar() {
   const router = useRouter();
   const pathname = usePathname();
   const { status } = useApiHealth();
+  const userId = useUserId();
 
   const onAbout = pathname === '/about';
   // Toggle off → always go straight to the chat, regardless of history.
@@ -86,10 +88,10 @@ export function AppBar() {
       router.push('/about');
     }
   };
-  // No in-app calendar view: open the device's calendar app directly so the
-  // user always sees their real, live calendar (the single source of truth).
+  // No in-app calendar view: open the calendar of the provider the user
+  // connected (Google / Outlook / iCloud on web; the device app on native).
   const handleCalendarPress = () => {
-    void openNativeCalendar();
+    void openConnectedCalendar(userId);
   };
 
   return (
