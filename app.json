@@ -2,7 +2,7 @@
   "expo": {
     "name": "JIMI The Chatbot",
     "slug": "jimi-app",
-    "version": "3.0.4",
+    "version": "3.1.0",
     "scheme": "jimi",
     "orientation": "portrait",
     "icon": "./assets/images/logo-app.png",
