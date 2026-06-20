@@ -145,12 +145,19 @@ export default function PrivacyScreen() {
                 train their models.
               </P>
               <P>
-                Calendar entries are never sent to Mistral. If you haven&apos;t
-                connected a calendar, they live on our own server (Spring Boot +
-                MariaDB) in the European Union. If you connect one, Jimi sends
-                them directly to that provider (Google, Microsoft or your CalDAV
+                When you ask Jimi about your schedule (e.g. &quot;what&apos;s on
+                today?&quot;), the relevant events are sent to Mistral so it can
+                phrase the answer — and, as above, Mistral doesn&apos;t retain
+                them or train on them. We don&apos;t send your calendar to
+                Mistral for any other purpose.
+              </P>
+              <P>
+                Events themselves are stored on our own server (Spring Boot +
+                MariaDB, in the European Union) only if you haven&apos;t
+                connected a calendar. If you connect one, Jimi writes them
+                straight to that provider (Google, Microsoft or your CalDAV
                 host) on your behalf, governed by that provider&apos;s own
-                privacy policy.
+                privacy policy — we keep no copy.
               </P>
             </Section>
 
@@ -173,6 +180,42 @@ export default function PrivacyScreen() {
                 We don&apos;t use cookies for tracking. The only persisted
                 client-side value is the <Text style={styles.code}>userId</Text>.
               </Bullet>
+            </Section>
+
+            <Section eyebrow="Google user data" title="If you connect Google Calendar">
+              <Bullet>
+                With the <Text style={styles.code}>calendar.events</Text> scope,
+                Jimi can <Text style={styles.bold}>read and write events</Text>{' '}
+                on your Google Calendar — and nothing else (no contacts, no
+                email, no other Google data).
+              </Bullet>
+              <Bullet>
+                We use it only to do what you ask in chat: create, edit, delete
+                or summarise your events. When you ask about your schedule, the
+                relevant events are sent to Mistral to phrase the reply (not
+                retained or used for training).
+              </Bullet>
+              <Bullet>
+                We keep <Text style={styles.bold}>no copy</Text> of your Google
+                Calendar events. We store only your access tokens, encrypted,
+                and revoke them when you disconnect or delete your data.
+              </Bullet>
+              <P>
+                Jimi&apos;s use and transfer of information received from Google
+                APIs to any other app will adhere to the{' '}
+                <Text
+                  style={styles.link}
+                  accessibilityRole="link"
+                  onPress={() =>
+                    Linking.openURL(
+                      'https://developers.google.com/terms/api-services-user-data-policy',
+                    )
+                  }
+                >
+                  Google API Services User Data Policy
+                </Text>
+                , including the Limited Use requirements.
+              </P>
             </Section>
 
             <Section eyebrow="Retention" title="How long we keep it">
