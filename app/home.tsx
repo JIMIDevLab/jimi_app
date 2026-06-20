@@ -355,6 +355,10 @@ export default function ChatScreen() {
                     <Link href="/privacy" style={styles.footnoteLink}>
                       Privacy
                     </Link>
+                    {'  ·  '}
+                    <Link href="/terms" style={styles.footnoteLink}>
+                      Terms
+                    </Link>
                   </>
                 ) : null}
               </Text>
