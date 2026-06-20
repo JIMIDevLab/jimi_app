@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserId } from '../hooks/useUserId';
 import {
   View,
@@ -34,6 +34,7 @@ import { sendMessage, confirmAction } from '../api/apiServicePost';
 import {
   connectOAuth,
   connectCalDav,
+  isCalendarConnected,
   type CalDavCredentials,
   type OAuthProvider,
 } from '../api/calendarConnection';
@@ -61,19 +62,33 @@ export default function ChatScreen() {
   const [pending, setPending] = useState(false);
   const conversationIdRef = useRef<string | null>(null);
   const listRef = useRef<FlatList<MessageModel>>(null);
-  // When a 'connect' action is tapped we open the provider picker; the index
-  // and retryMessage of the originating action are kept so success can consume
-  // that action and replay the original message.
+  // When a 'connect' action is tapped we open the provider picker. `index` is the
+  // message whose connect button was tapped (so success can consume it); it's
+  // absent when the user connects proactively from the banner.
   const [connectSheet, setConnectSheet] = useState<{
-    index: number;
+    index?: number;
     retryMessage?: string;
   } | null>(null);
+  // null = unknown (not checked yet); true/false once /connections is read.
+  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
   const userId = useUserId();
 
   const { status, errorReason, recheck, reportFailure } = useApiHealth();
   const online = status === 'online';
   const checking = status === 'checking';
   const ready = online && userId !== null;
+
+  // Check whether a calendar is connected, to offer a proactive "connect" CTA.
+  useEffect(() => {
+    if (!userId || !online) return;
+    let cancelled = false;
+    isCalendarConnected(userId).then((c) => {
+      if (!cancelled) setCalendarConnected(c);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, online]);
 
   const submit = useCallback(
     async (text: string) => {
@@ -137,16 +152,17 @@ export default function ChatScreen() {
   // Tapping the inline 'Connect a calendar' button no longer runs Google
   // directly — it opens the provider picker. The picker reports success and we
   // finish the flow here (consume the action, confirm, replay the message).
-  const openConnectSheet = useCallback((index: number, retryMessage?: string) => {
+  const openConnectSheet = useCallback((index?: number, retryMessage?: string) => {
     setConnectSheet({ index, retryMessage });
   }, []);
 
   const finishConnect = useCallback(() => {
     if (connectSheet) {
-      consumeAction(connectSheet.index);
+      if (connectSheet.index !== undefined) consumeAction(connectSheet.index);
       appendBot('Your calendar is connected. \u{1F389}');
       if (connectSheet.retryMessage) submit(connectSheet.retryMessage);
     }
+    setCalendarConnected(true);
     setConnectSheet(null);
   }, [connectSheet, consumeAction, appendBot, submit]);
 
@@ -309,6 +325,23 @@ export default function ChatScreen() {
                 </View>
               ) : null}
 
+              {ready && calendarConnected === false ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Connect a calendar"
+                  onPress={() => openConnectSheet()}
+                  style={({ pressed }) => [
+                    styles.connectBanner,
+                    pressed && styles.connectBannerPressed,
+                  ]}
+                >
+                  <Text style={styles.connectBannerText}>
+                    📅 Connect a calendar to let Jimi manage your events
+                  </Text>
+                  <Text style={styles.connectBannerCta}>Connect →</Text>
+                </Pressable>
+              ) : null}
+
               <View
                 style={[
                   styles.inputBar,
@@ -406,6 +439,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   bannerWrap: { marginBottom: spacing.sm },
+  connectBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  connectBannerPressed: { opacity: 0.85 },
+  connectBannerText: {
+    flex: 1,
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    color: colors.text,
+  },
+  connectBannerCta: {
+    fontFamily: typography.bodyFamily,
+    fontSize: typography.caption,
+    fontWeight: '700',
+    color: colors.accentDeep,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
