@@ -15,11 +15,15 @@ import { colors, radius, shadow, spacing, typography } from '../theme/styles';
 import type {
   CalDavCredentials,
   CalDavResult,
+  CalendarProvider,
   OAuthProvider,
 } from '../api/calendarConnection';
 
 interface Props {
   visible: boolean;
+  // Providers the deployment currently offers (from GET /config). null = not
+  // loaded yet → show all (the API's /connect guard still refuses disabled ones).
+  enabledProviders: CalendarProvider[] | null;
   onClose: () => void;
   // Runs the OAuth flow for the chosen provider; resolves true once linked.
   onConnectOAuth: (provider: OAuthProvider) => Promise<boolean>;
@@ -36,10 +40,14 @@ type View_ = 'picker' | 'caldav';
 // outcomes via the callbacks.
 export function ConnectCalendarSheet({
   visible,
+  enabledProviders,
   onClose,
   onConnectOAuth,
   onConnectCalDav,
 }: Props) {
+  // null = config not loaded yet → don't hide anything (server still guards).
+  const isEnabled = (provider: CalendarProvider) =>
+    enabledProviders === null || enabledProviders.includes(provider);
   const [view, setView] = useState<View_>('picker');
   const [busy, setBusy] = useState<OAuthProvider | 'caldav' | null>(null);
   const [serverUrl, setServerUrl] = useState('');
@@ -128,30 +136,42 @@ export function ConnectCalendarSheet({
                 Jimi reads and writes your real calendar. Choose where it lives.
               </Text>
 
-              <ProviderRow
-                label="Google Calendar"
-                hint="Sign in with your Google account"
-                busy={busy === 'google'}
-                disabled={busy !== null}
-                onPress={() => handleOAuth('google')}
-              />
-              <ProviderRow
-                label="Outlook / Microsoft 365"
-                hint="Sign in with your Microsoft account"
-                busy={busy === 'microsoft'}
-                disabled={busy !== null}
-                onPress={() => handleOAuth('microsoft')}
-              />
-              <ProviderRow
-                label="Apple iCloud / Other (CalDAV)"
-                hint="Connect with a server URL and credentials"
-                busy={false}
-                disabled={busy !== null}
-                onPress={() => {
-                  setError(null);
-                  setView('caldav');
-                }}
-              />
+              {isEnabled('google') ? (
+                <ProviderRow
+                  label="Google Calendar"
+                  hint="Sign in with your Google account"
+                  busy={busy === 'google'}
+                  disabled={busy !== null}
+                  onPress={() => handleOAuth('google')}
+                />
+              ) : null}
+              {isEnabled('microsoft') ? (
+                <ProviderRow
+                  label="Outlook / Microsoft 365"
+                  hint="Sign in with your Microsoft account"
+                  busy={busy === 'microsoft'}
+                  disabled={busy !== null}
+                  onPress={() => handleOAuth('microsoft')}
+                />
+              ) : null}
+              {isEnabled('caldav') ? (
+                <ProviderRow
+                  label="Apple iCloud / Other (CalDAV)"
+                  hint="Connect with a server URL and credentials"
+                  busy={false}
+                  disabled={busy !== null}
+                  onPress={() => {
+                    setError(null);
+                    setView('caldav');
+                  }}
+                />
+              ) : null}
+
+              {enabledProviders !== null && enabledProviders.length === 0 ? (
+                <Text style={styles.subtitle}>
+                  Calendar connections are temporarily unavailable. Please try again later.
+                </Text>
+              ) : null}
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
             </ScrollView>
