@@ -35,7 +35,9 @@ import {
   connectOAuth,
   connectCalDav,
   isCalendarConnected,
+  fetchEnabledProviders,
   type CalDavCredentials,
+  type CalendarProvider,
   type OAuthProvider,
 } from '../api/calendarConnection';
 import { openEvent } from '../api/nativeCalendar';
@@ -71,6 +73,9 @@ export default function ChatScreen() {
   } | null>(null);
   // null = unknown (not checked yet); true/false once /connections is read.
   const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+  // Which providers the server currently offers (deploy-time toggles). null
+  // until /config is read; the picker hides any provider absent from this list.
+  const [enabledProviders, setEnabledProviders] = useState<CalendarProvider[] | null>(null);
   const userId = useUserId();
 
   const { status, errorReason, recheck, reportFailure } = useApiHealth();
@@ -89,6 +94,19 @@ export default function ChatScreen() {
       cancelled = true;
     };
   }, [userId, online]);
+
+  // Read which calendar providers the deployment offers, so disabled ones are
+  // hidden from the picker. Refreshed whenever the API comes back online.
+  useEffect(() => {
+    if (!online) return;
+    let cancelled = false;
+    fetchEnabledProviders().then((providers) => {
+      if (!cancelled) setEnabledProviders(providers);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
 
   const submit = useCallback(
     async (text: string) => {
@@ -400,6 +418,7 @@ export default function ChatScreen() {
         </KeyboardAvoidingView>
         <ConnectCalendarSheet
           visible={connectSheet !== null}
+          enabledProviders={enabledProviders}
           onClose={() => setConnectSheet(null)}
           onConnectOAuth={handleConnectOAuth}
           onConnectCalDav={handleConnectCalDav}

@@ -39,6 +39,27 @@ export interface CalDavResult {
   reason?: string;
 }
 
+// Which calendar providers the server currently offers. Driven by deploy-time
+// toggles on the API (GET /config): a provider that is disabled there is hidden
+// from the connect picker, so access can be cut without an app release.
+// On any failure we fall back to "all enabled" — the API's /connect guard stays
+// the source of truth, so an over-optimistic UI just surfaces a server error.
+const ALL_PROVIDERS: readonly CalendarProvider[] = ['google', 'microsoft', 'caldav'];
+
+export async function fetchEnabledProviders(): Promise<CalendarProvider[]> {
+  const url = `${ApiConstants.baseUrl}${ApiConstants.config}`;
+  try {
+    const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    if (!res.ok) return [...ALL_PROVIDERS];
+    const json = (await res.json()) as { providers?: Record<string, unknown> } | null;
+    const providers = json?.providers;
+    if (!providers || typeof providers !== 'object') return [...ALL_PROVIDERS];
+    return ALL_PROVIDERS.filter((p) => providers[p] === true);
+  } catch {
+    return [...ALL_PROVIDERS];
+  }
+}
+
 export async function fetchConnectedProviders(userId: string): Promise<string[]> {
   const url = `${ApiConstants.baseUrl}${ApiConstants.connections}?userId=${encodeURIComponent(userId)}`;
   const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });

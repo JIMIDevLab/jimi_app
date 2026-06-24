@@ -26,6 +26,7 @@ export const ApiConstants = {
   baseUrl: resolveBaseUrl(),
   sendMessage: '/chat',
   confirm: '/chat/confirm',
+  config: '/config',
   connections: '/connections',
   // OAuth providers share the same /connect/{provider} shape; CalDAV is a
   // dedicated credentials POST. `connect(provider)` builds the path so callers
