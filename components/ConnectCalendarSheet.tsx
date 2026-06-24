@@ -45,9 +45,16 @@ export function ConnectCalendarSheet({
   onConnectOAuth,
   onConnectCalDav,
 }: Props) {
-  // null = config not loaded yet → don't hide anything (server still guards).
+  // null = config not loaded yet → treat everything as enabled (the API's
+  // /connect guard still refuses a disabled provider as a backstop).
   const isEnabled = (provider: CalendarProvider) =>
     enabledProviders === null || enabledProviders.includes(provider);
+
+  // Tapping a disabled (greyed) provider doesn't start its flow — it just
+  // surfaces why it's unavailable.
+  const showUnavailable = useCallback((label: string) => {
+    setError(`${label} is currently unavailable. Please pick another calendar.`);
+  }, []);
   const [view, setView] = useState<View_>('picker');
   const [busy, setBusy] = useState<OAuthProvider | 'caldav' | null>(null);
   const [serverUrl, setServerUrl] = useState('');
@@ -136,42 +143,45 @@ export function ConnectCalendarSheet({
                 Jimi reads and writes your real calendar. Choose where it lives.
               </Text>
 
-              {isEnabled('google') ? (
-                <ProviderRow
-                  label="Google Calendar"
-                  hint="Sign in with your Google account"
-                  busy={busy === 'google'}
-                  disabled={busy !== null}
-                  onPress={() => handleOAuth('google')}
-                />
-              ) : null}
-              {isEnabled('microsoft') ? (
-                <ProviderRow
-                  label="Outlook / Microsoft 365"
-                  hint="Sign in with your Microsoft account"
-                  busy={busy === 'microsoft'}
-                  disabled={busy !== null}
-                  onPress={() => handleOAuth('microsoft')}
-                />
-              ) : null}
-              {isEnabled('caldav') ? (
-                <ProviderRow
-                  label="Apple iCloud / Other (CalDAV)"
-                  hint="Connect with a server URL and credentials"
-                  busy={false}
-                  disabled={busy !== null}
-                  onPress={() => {
-                    setError(null);
-                    setView('caldav');
-                  }}
-                />
-              ) : null}
-
-              {enabledProviders !== null && enabledProviders.length === 0 ? (
-                <Text style={styles.subtitle}>
-                  Calendar connections are temporarily unavailable. Please try again later.
-                </Text>
-              ) : null}
+              <ProviderRow
+                label="Google Calendar"
+                hint="Sign in with your Google account"
+                busy={busy === 'google'}
+                disabled={busy !== null}
+                unavailable={!isEnabled('google')}
+                onPress={() =>
+                  isEnabled('google')
+                    ? handleOAuth('google')
+                    : showUnavailable('Google Calendar')
+                }
+              />
+              <ProviderRow
+                label="Outlook / Microsoft 365"
+                hint="Sign in with your Microsoft account"
+                busy={busy === 'microsoft'}
+                disabled={busy !== null}
+                unavailable={!isEnabled('microsoft')}
+                onPress={() =>
+                  isEnabled('microsoft')
+                    ? handleOAuth('microsoft')
+                    : showUnavailable('Outlook / Microsoft 365')
+                }
+              />
+              <ProviderRow
+                label="Apple iCloud / Other (CalDAV)"
+                hint="Connect with a server URL and credentials"
+                busy={false}
+                disabled={busy !== null}
+                unavailable={!isEnabled('caldav')}
+                onPress={() => {
+                  if (!isEnabled('caldav')) {
+                    showUnavailable('Apple iCloud / CalDAV');
+                    return;
+                  }
+                  setError(null);
+                  setView('caldav');
+                }}
+              />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
             </ScrollView>
@@ -265,33 +275,38 @@ function ProviderRow({
   hint,
   busy,
   disabled,
+  unavailable = false,
   onPress,
 }: {
   label: string;
   hint: string;
   busy: boolean;
   disabled: boolean;
+  // Disabled by the deployment: rendered greyed and without a chevron. Still
+  // tappable so the press handler can explain why it's unavailable.
+  unavailable?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: unavailable }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        pressed && !disabled && styles.pressed,
-        disabled && !busy && styles.disabled,
+        pressed && !disabled && !unavailable && styles.pressed,
+        (unavailable || (disabled && !busy)) && styles.disabled,
       ]}
     >
       <View style={styles.rowText}>
         <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={styles.rowHint}>{hint}</Text>
+        <Text style={styles.rowHint}>{unavailable ? 'Temporarily unavailable' : hint}</Text>
       </View>
       {busy ? (
         <ActivityIndicator size="small" color={colors.accent} />
-      ) : (
+      ) : unavailable ? null : (
         <Text style={styles.chevron}>›</Text>
       )}
     </Pressable>
