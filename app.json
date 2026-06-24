@@ -17,7 +17,8 @@
       "bundleIdentifier": "fr.tsp.jimithechatbot",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "fr.tsp.jimithechatbot",
