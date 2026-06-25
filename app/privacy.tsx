@@ -18,7 +18,7 @@ import {
 // If a deep link or refresh lands here on mobile, send the user back home.
 const isWeb = Platform.OS === 'web';
 
-const LAST_UPDATED = 'June 20, 2026';
+const LAST_UPDATED = 'June 25, 2026';
 const CONTACT_EMAIL = 'contact@jimi.julsql.fr';
 
 interface SectionProps {
@@ -216,6 +216,91 @@ export default function PrivacyScreen() {
                 </Text>
                 , including the Limited Use requirements.
               </P>
+            </Section>
+
+            <Section
+              eyebrow="Sharing"
+              title="Who we share, transfer or disclose data to"
+            >
+              <P>
+                We do <Text style={styles.bold}>not sell</Text> your data, and we
+                do not share, transfer or disclose your{' '}
+                <Text style={styles.bold}>Google user data</Text> — or any other
+                personal data — to third parties, except in the limited cases
+                listed here:
+              </P>
+              <Bullet>
+                <Text style={styles.bold}>Mistral AI</Text> (France, European
+                Union), our language-model provider. When you ask Jimi about your
+                schedule, the relevant calendar events — which may include data
+                from your connected Google Calendar — are sent to Mistral{' '}
+                <Text style={styles.bold}>solely</Text> to phrase Jimi&apos;s
+                reply. Per Mistral&apos;s API terms, this data is{' '}
+                <Text style={styles.bold}>not retained</Text> by Mistral and is{' '}
+                <Text style={styles.bold}>not used to train</Text> their models.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Our hosting provider</Text> (servers
+                located in the European Union), which operates the infrastructure
+                where your messages, conversation memory and{' '}
+                <Text style={styles.bold}>encrypted</Text> calendar access tokens
+                are stored. They act only as a data processor on our instructions
+                and cannot read your decrypted tokens or Google Calendar content.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Legal authorities</Text>, only where we
+                are legally required to disclose data (for example, a valid court
+                order).
+              </Bullet>
+              <P>
+                We <Text style={styles.bold}>never</Text> share Google user data
+                with advertisers or data brokers, never use it for advertising or
+                ad personalisation, and never transfer it for any purpose
+                unrelated to the calendar features you explicitly request. This is
+                consistent with the Google API Services User Data Policy&apos;s
+                Limited Use requirements.
+              </P>
+            </Section>
+
+            <Section
+              eyebrow="Security"
+              title="How we protect your data, including sensitive data"
+            >
+              <P>
+                We treat your calendar access tokens and calendar content as{' '}
+                <Text style={styles.bold}>sensitive data</Text> and protect them
+                with the following mechanisms:
+              </P>
+              <Bullet>
+                <Text style={styles.bold}>Encryption in transit</Text> — all
+                traffic between the app and our servers, and between our servers
+                and Google or Mistral, is encrypted with HTTPS/TLS.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Encryption at rest</Text> — calendar
+                access tokens, the most sensitive data we store, are encrypted
+                with <Text style={styles.bold}>AES-256-GCM</Text>. The encryption
+                key is held separately from the database, so stored tokens are
+                unreadable on their own.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Data minimisation</Text> — we request
+                only the <Text style={styles.code}>calendar.events</Text> scope,
+                keep <Text style={styles.bold}>no copy</Text> of your Google
+                Calendar events, and store no other Google data.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Restricted access</Text> — only the
+                running service can decrypt tokens, and solely to carry out the
+                action you asked for; access to production systems is restricted
+                and logged.
+              </Bullet>
+              <Bullet>
+                <Text style={styles.bold}>Revocation &amp; deletion</Text> —
+                tokens are revoked the moment you disconnect a calendar or your
+                data is deleted, and all storage and processing takes place within
+                the European Union.
+              </Bullet>
             </Section>
 
             <Section eyebrow="Retention" title="How long we keep it">
