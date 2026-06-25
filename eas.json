@@ -18,13 +18,17 @@
       }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://jimi-api.julsql.fr"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6764839053"
+      }
+    }
   }
 }
