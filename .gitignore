@@ -30,3 +30,6 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# EAS local signing credentials — contains keystore passwords, never commit
+credentials.json
