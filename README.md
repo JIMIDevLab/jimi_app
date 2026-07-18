@@ -104,8 +104,7 @@ order.)
 ├── assets/images/logo.png
 ├── app.json                    # Expo config (iOS/Android/Web)
 ├── Dockerfile                  # multi-stage: npm build → nginx
-├── docker-compose.yml          # production runtime (one container)
-└── infra/nginx/                # host nginx vhost templates
+└── docker-compose.yml          # local dev runtime (one container)
 ```
 
 ## Routes
@@ -221,82 +220,22 @@ host machine. Use:
 
 ## Deployment
 
-The runtime stack is `docker-compose.yml` (one `app` container —
-multi-stage Dockerfile that runs `npm ci` + `npm run build:web`
-then serves `dist/` with an internal nginx). The container is
-bound to `127.0.0.1:${APP_PORT:-8101}:80` and the host's nginx
-reverse-proxies `jimi.julsql.fr` onto that loopback port — see
-[`infra/nginx/`](./infra/nginx) for the drop-in vhost.
+Deployment is fully automated through the container registry — no
+SSH, no host checkout, no per-host nginx.
 
-> ⚠️ The `npm ci` step peaks at ~1 GB resident. On a small VPS,
-> configure swap once before deploying:
-> ```bash
-> sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && \
->   sudo mkswap /swapfile && sudo swapon /swapfile && \
->   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-> ```
+1. **CI build & push.** `.github/workflows/docker.yml` runs on every
+   push to `main` (and on manual dispatch): it builds the multi-stage
+   Dockerfile (`npm ci` + `npm run build:web`, served by an internal
+   nginx) with `EXPO_PUBLIC_API_URL` baked in as a build arg, then
+   pushes the image to **GHCR** (`ghcr.io/<owner>/jimi-app`), tagged
+   `latest` and `sha-<commit>`.
+2. **k3s auto-rollout via Keel.** The cluster runs
+   [Keel](https://keel.sh), which polls GHCR and triggers a rolling
+   update whenever the image digest behind `latest` changes. No
+   manual `kubectl` step is needed to ship a merged change.
 
-### One-time host setup
-
-```bash
-git clone https://github.com/<owner>/jimi_app.git /opt/jimi_app
-cd /opt/jimi_app
-
-cat > .env <<EOF
-EXPO_PUBLIC_API_URL=https://jimi-api.julsql.fr
-APP_PORT=8101
-EOF
-
-# Drop the host nginx vhost
-sudo cp infra/nginx/jimi.julsql.fr.conf /etc/nginx/conf.d/
-sudo certbot --nginx -d jimi.julsql.fr
-sudo nginx -s reload
-```
-
-The user that runs `docker compose` must be in the `docker` group.
-
-### Deploy with GitHub Actions
-
-`.github/workflows/deploy.yml` runs on every push to `main` and on
-manual dispatch. Configure these repository secrets
-(*Settings → Secrets and variables → Actions*):
-
-| Secret        | Example         |
-|---------------|-----------------|
-| `SSH_HOST`    | `your.server`   |
-| `SSH_USER`    | `deploy`        |
-| `SSH_KEY`     | the SSH **private** key authorized on the server |
-| `DEPLOY_PATH` | `/opt/jimi_app` |
-
-The workflow SSHes onto the server and runs:
-
-```bash
-cd $DEPLOY_PATH
-git pull
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-docker image prune -f
-```
-
-### Deploy manually
-
-Same five commands, packaged in `deploy.sh`:
-
-```bash
-DEPLOY_HOST=deploy@your.server \
-DEPLOY_PATH=/opt/jimi_app \
-./deploy.sh
-```
-
-Or by hand:
-
-```bash
-ssh deploy@your.server
-cd /opt/jimi_app
-git pull
-docker compose up -d --build
-```
+The Kubernetes manifests (Deployment, Service, Ingress + TLS) live in
+the separate **`k3s-manifests`** repo, not here.
 
 ## Android release build
 
