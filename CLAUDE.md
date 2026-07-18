@@ -67,8 +67,7 @@ jimi_app/
 ├── tsconfig.json
 ├── Dockerfile                  # static web build → nginx
 ├── docker/nginx.conf           # inner nginx serving the bundle
-├── docker-compose.yml          # outer stack (app + api + nginx + certbot)
-└── infra/                      # outer-nginx vhosts + Let's Encrypt bootstrap
+└── docker-compose.yml          # local dev runtime (one app container)
 ```
 
 ## API contract
@@ -179,37 +178,22 @@ to the project root.
 
 ## Deployment
 
-**Two independent stacks**, deployed separately. The web app and the
-API don't share a docker-compose file — the Android client and the
-browser both hit `https://jimi-api.julsql.fr` the same way, so the API
-must stand on its own.
+Deploys run entirely through GHCR + k3s — no SSH, no host checkout.
 
-- `jimi_app/docker-compose.yml` runs only the `app` container (Expo
-  Web bundle served by an internal nginx). Bound to
-  `127.0.0.1:${APP_PORT:-8101}:80`.
-- `jimi_api/docker-compose.yml` runs `api` + `db` (MariaDB). The api is
-  bound to `127.0.0.1:${API_PORT:-8102}:8080`. The DB stays inside the
-  Docker bridge network — never exposed on the host.
+- **CI** (`.github/workflows/docker.yml`) builds this repo's Dockerfile
+  on every push to `main` and pushes the image to GHCR
+  (`ghcr.io/<owner>/jimi-app`, tags `latest` + `sha-<commit>`). The
+  Dockerfile bakes `EXPO_PUBLIC_API_URL` in as a `--build-arg`, so the
+  public API URL is fixed at build time.
+- **k3s + Keel**: the cluster runs [Keel](https://keel.sh), which polls
+  GHCR and rolls out the Deployment whenever the `latest` digest
+  changes. Merging to `main` is the whole deploy.
+- The k8s manifests (Deployment/Service/Ingress) live in the separate
+  **`k3s-manifests`** repo, not here.
 
-Both are reverse-proxied by the host's system nginx:
-
-```
-jimi.julsql.fr      →  127.0.0.1:8101  →  app container
-jimi-api.julsql.fr  →  127.0.0.1:8102  →  api container
-```
-
-`infra/nginx/` ships drop-in vhosts for both domains.
-`certbot --nginx -d <fqdn>` once per domain.
-
-**No registry pulls of JIMI-specific images.** Every Dockerfile is
-built locally from source on the server. Only generic upstream images
-are fetched (`mariadb:11`, `node:20-alpine`, `nginx:1.27-alpine`,
-`maven:3.9-eclipse-temurin-17`, `eclipse-temurin:17-jre`). The compose
-files use `build:` only — no `image: jimi-*:latest` aliases.
-
-The Dockerfile in this repo passes `EXPO_PUBLIC_API_URL` as a
-`--build-arg`, so the public API URL is baked into the JS bundle at
-build time.
+`docker-compose.yml` in this repo is **local dev only** (one `app`
+container serving the Expo Web bundle on `${APP_PORT:-8101}:80`); it
+is not used to deploy.
 
 ## Conventions
 
