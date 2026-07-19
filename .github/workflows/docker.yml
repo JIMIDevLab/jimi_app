@@ -44,3 +44,11 @@ jobs:
             EXPO_PUBLIC_API_URL=https://jimi-api.julsql.fr
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Notify Keel to redeploy
+        run: |
+          curl -fsS --retry 3 --retry-delay 5 -X POST \
+            https://keel.julsql.fr/v1/webhooks/native \
+            -u "${{ secrets.KEEL_WEBHOOK_AUTH }}" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"ghcr.io/jimidevlab/jimi-app","tag":"latest"}'
