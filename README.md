@@ -229,10 +229,9 @@ SSH, no host checkout, no per-host nginx.
    nginx) with `EXPO_PUBLIC_API_URL` baked in as a build arg, then
    pushes the image to **GHCR** (`ghcr.io/<owner>/jimi-app`), tagged
    `latest` and `sha-<commit>`.
-2. **k3s auto-rollout via Keel.** The cluster runs
-   [Keel](https://keel.sh), which polls GHCR and triggers a rolling
-   update whenever the image digest behind `latest` changes. No
-   manual `kubectl` step is needed to ship a merged change.
+2. **k3s auto-rollout via Keel.** Deployment is automatic: after the
+   push, the CI pings the server (Keel webhook), which updates its
+   pods. No manual `kubectl` step is needed to ship a merged change.
 
 The Kubernetes manifests (Deployment, Service, Ingress + TLS) live in
 the separate **`k3s-manifests`** repo, not here.
